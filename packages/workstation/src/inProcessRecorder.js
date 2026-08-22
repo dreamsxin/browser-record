@@ -99,8 +99,10 @@ class InProcessRecorder {
       await this.context.tracing.stop({ path: tracePath });
       console.log(`[recorder:${this.employeeId}] 分段 ${segmentIndex} 已保存: ${path.basename(tracePath)}`);
     } catch (err) {
-      console.error(`[recorder:${this.employeeId}] 停止 Tracing 失败 (段 ${segmentIndex}): ${err.message}`);
-      this.state.lastError = err.message;
+      // 浏览器已被关闭时 tracing.stop 会抛错；此为正常情况，仅记录，不再视为错误
+      const msg = err.message || String(err);
+      this.state.lastError = msg;
+      console.warn(`[recorder:${this.employeeId}] Tracing 已停止（段 ${segmentIndex} 未保存）: ${msg}`);
       return;
     }
 

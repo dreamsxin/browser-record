@@ -70,6 +70,12 @@ function fmtInstance(i) {
     } else if (cmd === 'stop-all') {
       const r = await request('POST', '/api/instances/stop-all');
       console.log('已停止全部实例：', (r.data.stopped || []).length, '个');
+    } else if (cmd === 'remove' || cmd === 'rm') {
+      const id = rest[0];
+      if (!id) { console.error('用法: workstation remove <instanceId>'); process.exit(1); }
+      const r = await request('DELETE', `/api/instances/${encodeURIComponent(id)}`);
+      if (r.status !== 200) { console.error('移除失败:', r.data); process.exit(1); }
+      console.log('已移除实例:', id);
     } else if (cmd === 'get') {
       const id = rest[0];
       if (!id) { console.error('用法: workstation get <instanceId>'); process.exit(1); }
@@ -82,6 +88,7 @@ function fmtInstance(i) {
       console.log('  workstation start [--id <employeeId>] [--url <startingUrl>]');
       console.log('  workstation stop <instanceId>');
       console.log('  workstation stop-all');
+      console.log('  workstation remove <instanceId>');
       console.log('  workstation list');
       console.log('  workstation get <instanceId>');
     }

@@ -148,6 +148,21 @@ class InstanceManager {
     return i ? this._public(i) : null;
   }
 
+  /**
+   * 从实例列表中移除一个已停止/已关闭的实例（不删除 profile 目录）。
+   * 若实例仍在运行，会先尝试停止。
+   */
+  async remove(instanceId) {
+    const instance = this.instances.get(instanceId);
+    if (!instance) throw new Error(`实例不存在: ${instanceId}`);
+    const active = instance.status !== 'stopped' && instance.status !== 'browser_closed' && !instance.closed;
+    if (active) {
+      await this.stop(instanceId);
+    }
+    this.instances.delete(instanceId);
+    return { instanceId, removed: true };
+  }
+
   getRecorderSnapshot(instanceId) {
     const instance = this.instances.get(instanceId);
     if (!instance || !instance.recorder) return null;

@@ -61,6 +61,16 @@ function createApp(config) {
     res.json({ stopped: results });
   });
 
+  // 从列表中移除已停止/已关闭的实例
+  app.delete('/api/instances/:id', async (req, res) => {
+    try {
+      const result = await manager.remove(req.params.id);
+      res.json(result);
+    } catch (err) {
+      res.status(400).json({ error: err.message });
+    }
+  });
+
   return { app, manager };
 }
 

@@ -63,7 +63,9 @@ async function refresh() {
           <th>实例 / 员工 ID</th><th>状态</th><th>录制</th>
           <th>当前分段</th><th>累计分段</th><th>启动时间</th><th>操作</th>
         </tr></thead>
-        <tbody>${list.map(i => `
+        <tbody>${list.map(i => {
+          const stopped = i.status === 'stopped' || i.status === 'browser_closed' || i.status === 'error';
+          return `
           <tr>
             <td>${i.instanceId}</td>
             <td><span class="status-dot status-${statusClass(i.status)}"></span>${i.status || '-'}</td>
@@ -71,8 +73,12 @@ async function refresh() {
             <td>${i.currentSegment ?? '-'}</td>
             <td>${i.totalSegments ?? 0}</td>
             <td>${fmtTime(i.startedAt)}</td>
-            <td><button class="btn btn-danger" onclick="stopInstance('${i.instanceId}')">停止</button></td>
-          </tr>`).join('')}
+            <td>
+              ${stopped ? '' : `<button class="btn btn-danger" onclick="stopInstance('${i.instanceId}')">停止</button>`}
+              <button class="btn btn-ghost" onclick="removeInstance('${i.instanceId}')">移除</button>
+            </td>
+          </tr>`;
+        }).join('')}
         </tbody>
       </table>`;
   } catch (e) {
@@ -103,6 +109,12 @@ async function stopInstance(id) {
   if (!confirm(`确认停止实例 ${id}？`)) return;
   try { await api('POST', `/api/instances/${encodeURIComponent(id)}/stop`); refresh(); }
   catch (e) { alert('停止失败：' + e.message); }
+}
+
+async function removeInstance(id) {
+  if (!confirm(`确认从列表移除实例 ${id}？（不删除 profile 目录）`)) return;
+  try { await api('DELETE', `/api/instances/${encodeURIComponent(id)}`); refresh(); }
+  catch (e) { alert('移除失败：' + e.message); }
 }
 
 refresh();
