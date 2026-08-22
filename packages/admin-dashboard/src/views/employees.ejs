@@ -26,6 +26,7 @@
         <thead>
           <tr>
             <th>员工 ID</th>
+            <th>状态</th>
             <th>会话数</th>
             <th>分段数</th>
             <th>总大小</th>
@@ -37,6 +38,7 @@
           <% employees.forEach((e) => { %>
           <tr>
             <td><%= e.employeeId %></td>
+            <td><%= e.status === 'active' ? '活动中' : e.status %></td>
             <td><%= e.sessionCount %></td>
             <td><%= e.segmentCount %></td>
             <td><%= e.totalBytesFmt %></td>

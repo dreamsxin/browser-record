@@ -11,7 +11,8 @@ const { StorageClient } = require('./storageClient');
 
 function fmtTime(ts) {
   if (!ts) return '-';
-  return new Date(Number(ts)).toISOString().replace('T', ' ').replace(/\..*/, '');
+  // 本地时区显示
+  return new Date(Number(ts)).toLocaleString('zh-CN', { hour12: false });
 }
 
 function fmtBytes(n) {

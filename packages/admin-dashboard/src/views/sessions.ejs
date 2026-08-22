@@ -29,6 +29,7 @@
         <thead>
           <tr>
             <th>会话 ID</th>
+            <th>状态</th>
             <th>分段数</th>
             <th>总大小</th>
             <th>开始时间</th>
@@ -40,10 +41,11 @@
           <% sessions.forEach((s) => { %>
           <tr>
             <td><%= s.sessionId %></td>
+            <td><%= s.status === 'recording' ? '录制中' : '已结束' %></td>
             <td><%= s.segmentCount %></td>
             <td><%= s.totalBytesFmt %></td>
             <td><%= s.startTimeFmt %></td>
-            <td><%= s.endTimeFmt %></td>
+            <td><%= s.status === 'recording' ? '录制中' : s.endTimeFmt %></td>
             <td><a class="link" href="/employees/<%= encodeURIComponent(employeeId) %>/sessions/<%= encodeURIComponent(s.sessionId) %>/segments">查看分段 →</a></td>
           </tr>
           <% }) %>

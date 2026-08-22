@@ -45,7 +45,7 @@
             <td><%= s.startTimeFmt %></td>
             <td><%= s.endTimeFmt %></td>
             <td><%= s.fileSizeFmt %></td>
-            <td><%= new Date(s.uploadTime).toISOString().replace('T',' ').replace(/\..*/,'') %></td>
+            <td><%= new Date(s.uploadTime).toLocaleString('zh-CN', { hour12: false }) %></td>
             <td><a class="btn btn-primary" href="/view/<%= encodeURIComponent(employeeId) %>/<%= encodeURIComponent(sessionId) %>/<%= encodeURIComponent(s.id) %>">回放</a></td>
           </tr>
           <% }) %>

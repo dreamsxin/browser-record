@@ -4,7 +4,7 @@ const express = require('express');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
-const { insertFile } = require('../db');
+const { insertFile, upsertLifecycleForFile } = require('../db');
 const { runRetention } = require('../retention');
 const { requireUploadToken } = require('./auth');
 
@@ -60,6 +60,7 @@ function buildUploadRouter(config) {
     }
 
     const relPath = path.relative(config.recordingsDir, finalPath);
+    upsertLifecycleForFile({ employeeId, sessionId, startTime, endTime });
     const { id, uploadTime } = insertFile({
       employeeId,
       sessionId,

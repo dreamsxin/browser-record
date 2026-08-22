@@ -68,13 +68,16 @@ class InstanceManager {
     };
     this.instances.set(instanceId, instance);
 
-    // 浏览器关闭（用户手动关窗或崩溃）
+    // 浏览器关闭（用户手动关窗或崩溃）：尝试刷出当前分段并上传，
+    // 更新录制状态（context 已关，tracing.stop 可能失败，recorder 内部会容忍）
     context.on('close', () => {
       console.log(`[workstation] 浏览器上下文已关闭: ${instanceId}`);
       const cur = this.instances.get(instanceId);
-      if (cur) {
-        cur.closed = true;
-        if (cur.status !== 'stopped') cur.status = 'browser_closed';
+      if (!cur) return;
+      cur.closed = true;
+      if (cur.status !== 'stopped') cur.status = 'browser_closed';
+      if (cur.recorder) {
+        cur.recorder.markBrowserClosed().catch((err) => console.error(`[workstation] 浏览器关闭后状态收敛异常 (${instanceId}):`, err));
       }
     });
 
