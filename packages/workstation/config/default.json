@@ -8,14 +8,12 @@
     "args": ["--no-first-run", "--no-default-browser-check"],
     "startingUrl": "about:blank"
   },
-  "recordingMode": "operations",
-  "operations": {
-    "chunkDurationMs": 30000,
-    "maxEvents": 100,
-    "maxScreenshotsPerSecond": 4,
-    "screenshotQuality": 65,
-    "captureNetworkSummary": true,
-    "captureConsole": true
+  "recordingMode": "live-trace",
+  "liveTrace": {
+    "checkpointIntervalMs": 30000,
+    "snapshots": true,
+    "screenshots": true,
+    "sources": false
   },
   "recording": {
     "segmentDurationMs": 1800000,

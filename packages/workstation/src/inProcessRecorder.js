@@ -4,6 +4,7 @@ const fs = require('fs');
 const path = require('path');
 const axios = require('axios');
 const { uploadSegment } = require('../../recording-agent/src/uploader');
+const { finalizeTrace } = require('../../live-trace-recorder/src/finalizeTrace');
 
 /**
  * 进程内录制器：在 workstation（InstanceManager）已通过 Playwright
@@ -22,12 +23,13 @@ const { uploadSegment } = require('../../recording-agent/src/uploader');
  *  - sessionId 每次启动实例生成（不绑定进程生命周期）
  */
 class InProcessRecorder {
-  constructor({ employeeId, segmentDurationMs, storageServerUrl, uploadToken, localTracesDir, retry, deleteAfterUpload }) {
+  constructor({ employeeId, segmentDurationMs, storageServerUrl, uploadToken, localTracesDir, rawTracesDir, retry, deleteAfterUpload }) {
     this.employeeId = employeeId;
     this.segmentDurationMs = segmentDurationMs || 1800000;
     this.storageServerUrl = storageServerUrl;
     this.uploadToken = uploadToken;
     this.localTracesDir = path.resolve(localTracesDir);
+    this.rawTracesDir = path.resolve(rawTracesDir || localTracesDir);
     this.retry = retry;
     this.deleteAfterUpload = deleteAfterUpload !== false;
     this.lifecycleUrl = `${this.storageServerUrl.replace(/\/$/, '')}/api/lifecycle`;
@@ -68,7 +70,7 @@ class InProcessRecorder {
     // live:true 让 trace 实时写入磁盘而非缓存，浏览器异常关闭时也能保留数据。
     await this.context.tracing.start({
       screenshots: true,
-      snapshots: false,
+      snapshots: true,
       sources: false,
       live: true,
     });
@@ -191,6 +193,33 @@ class InProcessRecorder {
     if (this.segmentTimer) clearTimeout(this.segmentTimer);
     this.state.recording = false;
     this.state.browserConnected = false;
+    // BrowserContext 已失效，但 patched SerializedFS 会在 Node 侧定时 flush。
+    // 等待一次 flush 周期，然后直接从磁盘 raw trace 生成标准恢复 ZIP。
+    try {
+      await new Promise((resolve) => setTimeout(resolve, 1200));
+      const traceName = this._traceName();
+      const recoveryPath = path.join(this.localTracesDir, `${traceName}-recovered.zip`);
+      await finalizeTrace(this.rawTracesDir, recoveryPath, traceName);
+      await uploadSegment({
+        filePath: recoveryPath,
+        employeeId: this.employeeId,
+        sessionId: this.sessionId,
+        segmentIndex: this.segmentIndex,
+        startTime: this.currentSegmentStart,
+        endTime: Date.now(),
+        config: {
+          storageServerUrl: this.storageServerUrl,
+          uploadToken: this.uploadToken,
+          uploadUrl: `${this.storageServerUrl.replace(/\/$/, '')}/api/upload`,
+          retry: this.retry,
+          deleteAfterUpload: this.deleteAfterUpload,
+        },
+      });
+      this.state.lastUploadTime = Date.now();
+    } catch (err) {
+      this.state.lastError = `recovery archive: ${err.message}`;
+      console.warn(`[recorder:${this.employeeId}] 浏览器关闭后恢复归档失败: ${err.message}`);
+    }
     await this._closeSession();
   }
 

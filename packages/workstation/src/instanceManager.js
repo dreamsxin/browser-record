@@ -3,7 +3,7 @@
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
-const { chromium } = require('playwright');
+const { chromium } = require('../../playwright-custom/playwright');
 const { InProcessRecorder } = require('./inProcessRecorder');
 const { OperationRecorder } = require('../../operation-recorder/src/operationRecorder');
 
@@ -52,10 +52,13 @@ class InstanceManager {
 
     console.log(`[workstation] 启动浏览器实例 ${instanceId} (profile=${profileDir})`);
 
+    const rawTracesDir = path.join(profileDir, 'live-trace-raw');
+    fs.mkdirSync(rawTracesDir, { recursive: true });
     const context = await chromium.launchPersistentContext(profileDir, {
       headless: this.config.browser.headless !== false ? false : !!this.config.browser.headless,
       executablePath: exePath,
       args: launchArgs,
+      tracesDir: rawTracesDir,
     });
 
     const instance = {
@@ -102,10 +105,13 @@ class InstanceManager {
         })
       : new InProcessRecorder({
           employeeId: instanceId,
-          segmentDurationMs: rc.segmentDurationMs || this.config.agent?.segmentDurationMs || 1800000,
+          segmentDurationMs: this.config.recordingMode === 'live-trace'
+            ? (this.config.liveTrace?.checkpointIntervalMs || 30000)
+            : (rc.segmentDurationMs || this.config.agent?.segmentDurationMs || 1800000),
           storageServerUrl: this.config.storageServerUrl,
           uploadToken: this.config.uploadToken,
           localTracesDir: path.join(profileDir, 'traces'),
+          rawTracesDir,
           retry: rc.retry,
           deleteAfterUpload: rc.deleteAfterUpload !== false,
         });

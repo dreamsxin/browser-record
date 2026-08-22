@@ -30,3 +30,6 @@ Thumbs.db
 # Editor
 .vscode/
 .idea/
+
+# External Playwright source checkout (build input only)
+playwright-1.62.1/

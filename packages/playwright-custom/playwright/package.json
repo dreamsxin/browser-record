@@ -1,0 +1,7 @@
+{
+  "name": "@browser-record/playwright-custom",
+  "version": "1.62.1-browser-record",
+  "private": true,
+  "main": "index.js",
+  "license": "Apache-2.0"
+}

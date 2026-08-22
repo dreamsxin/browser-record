@@ -2,7 +2,7 @@
 
 const fs = require('fs');
 const path = require('path');
-const { chromium } = require('playwright');
+const { chromium } = require('../../../playwright-custom/playwright');
 const { uploadSegment } = require('./uploader');
 
 /**
@@ -71,7 +71,7 @@ class Recorder {
     try {
       await this.context.tracing.start({
         screenshots: true,
-        snapshots: false,
+        snapshots: true,
         sources: false,
       });
     } catch (err) {

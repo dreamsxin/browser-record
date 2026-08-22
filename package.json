@@ -8,7 +8,9 @@
     "packages/storage-server",
     "packages/admin-dashboard",
     "packages/workstation",
-    "packages/operation-recorder"
+    "packages/operation-recorder",
+    "packages/live-trace-recorder",
+    "packages/playwright-custom"
   ],
   "scripts": {
     "agent": "npm run start -w @browser-record/recording-agent",
@@ -21,6 +23,6 @@
     "playwright:install": "playwright install chromium || node packages/recording-agent/scripts/skip-playwright.js"
   },
   "engines": {
-    "node": ">=18"
+    "node": ">=20"
   }
 }

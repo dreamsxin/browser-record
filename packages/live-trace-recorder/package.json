@@ -1,0 +1,8 @@
+{
+  "name": "@browser-record/live-trace-recorder",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Playwright Trace 原始目录实时归档与最终 ZIP 打包",
+  "main": "src/finalizeTrace.js",
+  "dependencies": { "yazl": "^3.1.1" }
+}
