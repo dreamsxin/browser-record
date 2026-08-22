@@ -42,7 +42,8 @@ function request(method, p, body) {
 
 function fmtInstance(i) {
   const started = i.startedAt ? new Date(i.startedAt).toLocaleString() : '-';
-  return `${i.instanceId.padEnd(22)} cdp=${i.cdpPort}  status=${(i.status || '').padEnd(16)} browserPid=${i.browserPid || '-'}  agentPid=${i.agentPid || '-'}  started=${started}`;
+  const rec = i.recording ? '录制中' : '未录制';
+  return `${i.instanceId.padEnd(22)} status=${(i.status || '').padEnd(16)} ${rec.padEnd(6)} seg=${i.currentSegment ?? '-'}  total=${i.totalSegments ?? 0}  started=${started}`;
 }
 
 (async () => {

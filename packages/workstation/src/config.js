@@ -34,11 +34,11 @@ const ENV_MAP = {
   PROFILES_DIR: ['profilesDir'],
   BROWSER_EXECUTABLE: ['browser', 'executablePath'],
   BROWSER_STARTING_URL: ['browser', 'startingUrl'],
+  BROWSER_HEADLESS: ['browser', 'headless'],
   STORAGE_SERVER_URL: ['storageServerUrl'],
   UPLOAD_TOKEN: ['uploadToken'],
-  AGENT_SEGMENT_MS: ['agent', 'segmentDurationMs'],
-  CDP_PORT_MIN: ['cdpPortRange', 'min'],
-  CDP_PORT_MAX: ['cdpPortRange', 'max'],
+  AGENT_SEGMENT_MS: ['recording', 'segmentDurationMs'],
+  RECORDING_SEGMENT_MS: ['recording', 'segmentDurationMs'],
 };
 
 function loadConfig(cwd) {
@@ -51,12 +51,12 @@ function loadConfig(cwd) {
   const base = cwd || process.cwd();
   config.profilesDir = path.resolve(base, config.profilesDir || './profiles');
 
-  // 数值化
-  if (config.cdpPortRange) {
-    config.cdpPortRange.min = Number(config.cdpPortRange.min) || 9300;
-    config.cdpPortRange.max = Number(config.cdpPortRange.max) || 9399;
+  if (config.recording) {
+    config.recording.segmentDurationMs = Number(config.recording.segmentDurationMs) || 1800000;
   }
-  config.agent.segmentDurationMs = Number(config.agent.segmentDurationMs) || 1800000;
+  if (config.browser && typeof config.browser.headless === 'string') {
+    config.browser.headless = config.browser.headless === 'true';
+  }
 
   return config;
 }

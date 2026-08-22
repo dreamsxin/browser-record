@@ -60,16 +60,16 @@ async function refresh() {
     body.innerHTML = `
       <table>
         <thead><tr>
-          <th>实例 / 员工 ID</th><th>CDP 端口</th><th>状态</th>
-          <th>浏览器 PID</th><th>Agent PID</th><th>启动时间</th><th>操作</th>
+          <th>实例 / 员工 ID</th><th>状态</th><th>录制</th>
+          <th>当前分段</th><th>累计分段</th><th>启动时间</th><th>操作</th>
         </tr></thead>
         <tbody>${list.map(i => `
           <tr>
             <td>${i.instanceId}</td>
-            <td>${i.cdpPort}</td>
             <td><span class="status-dot status-${statusClass(i.status)}"></span>${i.status || '-'}</td>
-            <td>${i.browserPid || '-'}</td>
-            <td>${i.agentPid || '-'}</td>
+            <td>${i.recording ? '录制中' : '—'}</td>
+            <td>${i.currentSegment ?? '-'}</td>
+            <td>${i.totalSegments ?? 0}</td>
             <td>${fmtTime(i.startedAt)}</td>
             <td><button class="btn btn-danger" onclick="stopInstance('${i.instanceId}')">停止</button></td>
           </tr>`).join('')}

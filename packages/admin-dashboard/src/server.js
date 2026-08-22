@@ -165,13 +165,15 @@ function createApp(config) {
     const { employeeId, sessionId, segmentId } = req.params;
     try {
       const { url } = await storage.signDownload(segmentId);
+      // 指向 storage-server 自托管的 Trace Viewer（与 trace 下载同源，避免跨域/混合内容阻断）
+      const viewerUrl = `${config.storageServerUrl.replace(/\/$/, '')}/viewer/?trace=${encodeURIComponent(url)}`;
       res.render('viewer', {
         user: req.user,
         employeeId,
         sessionId,
         segmentId,
         traceUrl: url,
-        viewerUrl: `https://trace.playwright.dev/?trace=${encodeURIComponent(url)}`,
+        viewerUrl,
       });
     } catch (err) {
       res.status(500).render('error', { error: err.message });

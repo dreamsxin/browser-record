@@ -60,7 +60,8 @@ function buildDownloadRouter(config) {
       detail: 'trace file downloaded via signed token',
     });
 
-    res.download(absPath, path.basename(absPath));
+    // 用 inline disposition 便于 Trace Viewer 作为 fetch body 读取（而非触发下载）
+    res.sendFile(absPath);
   });
 
   return router;

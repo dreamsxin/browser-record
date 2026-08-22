@@ -8,17 +8,18 @@
 
 ```
 员工电脑
-┌──────────────────────────────────────────────────────┐
-│ 工作台 (workstation) ──启动──▶ 浏览器实例 (CDP:9300+) │
-│      │                         ▲                      │
-│      └──自动拉起──▶ 录制代理 (Node) ──连接 CDP──┘     │
-└──────────────────────────┬───────────────────────────┘
-                           │ upload
-                           ▼
-                  中央存储服务 (Express+SQLite)
-                           ▲
-                           │ 查询/签名下载
-                  管理后台 (Express+EJS) ── Trace Viewer (iframe)
+┌────────────────────────────────────────────────────────────┐
+│ 工作台 (workstation, Node 进程)                             │
+│   └─ Playwright launchPersistentContext ──▶ 浏览器实例     │
+│        └─ 进程内 tracing.start/stop（分段录制 + 上传）      │
+└────────────────────────────┬───────────────────────────────┘
+                             │ upload
+                             ▼
+                    中央存储服务 (Express+SQLite)
+                    └─ /viewer 自托管 Trace Viewer（同源）
+                             ▲
+                             │ 查询/签名下载
+                    管理后台 (Express+EJS) ── iframe 嵌入 /viewer
 ```
 
 ## 仓库结构（npm workspaces monorepo）
@@ -28,9 +29,9 @@ browser-record/
 ├── DESIGN.md
 ├── package.json            # workspaces 根配置
 ├── packages/
-│   ├── workstation/        # 员工工作台：启动/关闭浏览器实例并自动挂接录制
-│   ├── recording-agent/    # 客户端录制代理（被工作台拉起）
-│   ├── storage-server/     # 中央存储服务
+│   ├── workstation/        # 员工工作台：Playwright 启动浏览器 + 进程内录制
+│   ├── recording-agent/    # 独立录制代理（手动场景：自启浏览器 + agent 连 CDP）
+│   ├── storage-server/     # 中央存储服务 + 自托管 Trace Viewer
 │   └── admin-dashboard/    # 管理后台
 ```
 
@@ -86,7 +87,6 @@ EMPLOYEE_ID=emp_001 SEGMENT_DURATION_MS=60000 npm run agent   # 测试：1 分�
 | 服务 | 端口 | 凭据 |
 |------|------|------|
 | 员工工作台 | 5000 | — |
-| 录制代理健康检查 | 4100+ | — |
 | 中央存储服务 | 4000 | 上传令牌 `dev-upload-token` |
 | 管理后台 | 3000 | `admin` / `admin123` |
 

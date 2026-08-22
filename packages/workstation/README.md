@@ -1,12 +1,12 @@
 # 员工工作台程序 (workstation)
 
-运行在员工电脑上的本地控制程序：启动/关闭浏览器实例，自动为每个实例分配独立的 profile 目录与 CDP 端口，并在启动浏览器后**自动拉起 recording-agent 连接该实例开始录制**。提供 Web UI 与 CLI 两种操作方式。
+运行在员工电脑上的本地控制程序：用 **Playwright 原生 API** 启动/关闭浏览器实例，自动为每个实例分配独立的 profile 目录，并在启动浏览器后**在进程内直接启动 Playwright Tracing 分段录制**。无需独立录制代理子进程，进程生命周期控制精确。提供 Web UI 与 CLI 两种操作方式。
 
 ## 职责
-- **启动浏览器实例**：为每个实例分配 `<profilesDir>/<instanceId>` 独立 profile 目录与 [9300,9399] 范围内的空闲 CDP 端口。
-- **自动挂接录制**：浏览器 CDP 就绪后，自动以子进程启动 `recording-agent`，通过环境变量传入 `CDP_ENDPOINT`、`EMPLOYEE_ID`、上传地址等，无需员工干预。
-- **关闭实例**：先优雅停止 agent（SIGINT 完成当前分段上传）再关闭浏览器，保留 profile 目录供下次复用。
-- **实例列表**：查看已启动实例的 ID、CDP 端口、浏览器/agent PID、状态、启动时间。
+- **启动浏览器实例**：用 `chromium.launchPersistentContext(profileDir, ...)` 启动，自动分配 `<profilesDir>/<instanceId>` 独立 profile 目录。Playwright 拥有浏览器句柄，生命周期可控。
+- **进程内录制**：浏览器启动后立即在同一个 Node 进程内对该 context 启动 `tracing.start`，按配置时长（默认 30 分钟）分段录制并上传。无独立 agent 子进程。
+- **关闭实例**：`recorder.stop()` 刷出并上传当前分段 → `context.close()`（Playwright 原生关闭，精确终止所有子进程，无残留）。
+- **实例列表**：查看每个实例的 ID、状态、录制中/否、当前分段、累计分段、启动时间。
 
 ## 配置
 默认配置在 `config/default.json`，可用 `config/local.json` 或环境变量覆盖：
@@ -15,12 +15,12 @@
 |---------|------|------|
 | `PORT` | `5000` | 工作台服务端口（仅监听 127.0.0.1） |
 | `PROFILES_DIR` | `./profiles` | 浏览器 profile 根目录 |
-| `BROWSER_EXECUTABLE` | 自动探测 | 浏览器可执行文件路径；留空则复用 recording-agent 的 Playwright Chromium |
+| `BROWSER_EXECUTABLE` | 自动探测 | 浏览器可执行文件路径；留空则用 Playwright 自带 Chromium |
+| `BROWSER_HEADLESS` | `false` | 是否无头（员工用需可见窗口） |
 | `BROWSER_STARTING_URL` | `about:blank` | 浏览器起始页 |
-| `CDP_PORT_MIN` / `CDP_PORT_MAX` | `9300` / `9399` | CDP 端口分配范围 |
-| `STORAGE_SERVER_URL` | `http://localhost:4000` | 传给 agent 的上传服务地址 |
-| `UPLOAD_TOKEN` | `dev-upload-token` | 传给 agent 的上传令牌 |
-| `AGENT_SEGMENT_MS` | `1800000` | 传给 agent 的分段时长（毫秒） |
+| `STORAGE_SERVER_URL` | `http://localhost:4000` | 上传服务地址 |
+| `UPLOAD_TOKEN` | `dev-upload-token` | 上传令牌 |
+| `RECORDING_SEGMENT_MS` | `1800000` | 分段时长（毫秒） |
 
 ## 运行
 ```bash
@@ -45,19 +45,20 @@ npm run workstation:cli -- get alice
 ## 实例状态
 | 状态 | 含义 |
 |------|------|
-| `browser_starting` | 浏览器进程已启动，等待 CDP 就绪 |
-| `browser_ready` | CDP 就绪，agent 尚未挂接或已退出 |
-| `recording` | 浏览器就绪且 recording-agent 正在录制 |
-| `stopped` | 已主动停止 |
-| `browser_exited` | 浏览器进程已退出 |
-| `error` | 初始化失败 |
+| `browser_ready` | 浏览器已启动，录制尚未开始 |
+| `recording` | 浏览器运行中且 Tracing 正在分段录制 |
+| `stopped` | 已主动停止（分段已上传，浏览器已关闭） |
+| `browser_closed` | 浏览器被用户手动关闭或崩溃 |
+| `error` | 录制启动失败 |
 
-## 端口分配规则
-- CDP 端口：从 `cdpPortRange.min` 起逐个探测空闲端口。
-- Agent 健康检查端口：`4100 + (cdpPort - cdpPortRange.min)`，与 CDP 端口一一对应，避免多实例冲突。
+## 架构说明
+工作台进程内同时完成「浏览器启动 + 录制」，不再 spawn 独立 recording-agent 子进程：
+- 启动：`launchPersistentContext` → 在 context 上 `tracing.start` → 定时器到点 `tracing.stop` 写 zip → 异步上传 → 立即 `tracing.start` 下一段。
+- 停止：`tracing.stop` 刷出当前分段 → 上传 → `context.close()`。
+- 这意味着无需 CDP 端口分配、无需跨进程健康检查、无需 `taskkill /T /F` 兜底——Playwright 原生关闭即精确终止浏览器全树。
 
 ## 典型工作流
 1. 员工开机后工作台自启（注册为 Windows 服务 / systemd）。
-2. 工作台启动浏览器实例 → 自动开始录制。
-3. 员工在该浏览器中操作店铺后台，全程被分段录制并上传。
-4. 下班或换班时，通过 Web UI / CLI 停止实例，agent 完成当前分段上传后退出。
+2. 工作台启动浏览器实例 → 进程内立即开始录制。
+3. 员工在该浏览器中操作，全程被分段录制并上传。
+4. 下班或换班时，通过 Web UI / CLI 停止实例，当前分段刷出并上传后浏览器关闭。

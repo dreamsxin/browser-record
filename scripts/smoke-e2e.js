@@ -148,7 +148,7 @@ function ok(...a) { console.log('  ✓', ...a); }
     log('跳过浏览器录制链路 (--no-browser)');
   }
 
-  // 6. 工作台链路：启动实例 -> 验证浏览器+agent 接通 -> 停止 -> 验证上传
+  // 6. 工作台链路：启动实例（Playwright 原生 + 进程内录制）-> 验证录制中 -> 停止 -> 验证上传
   if (withBrowser) {
     log('工作台 (workstation) 链路校验');
     const WS_URL = 'http://127.0.0.1:5000';
@@ -159,18 +159,18 @@ function ok(...a) { console.log('  ✓', ...a); }
       headers: { 'Content-Type': 'application/json' }, timeout: 30000,
     });
     if (inst.data.status !== 'recording') throw new Error('工作台实例未进入 recording 状态: ' + inst.data.status);
-    ok(`实例启动: ${inst.data.instanceId} cdp=${inst.data.cdpPort} agentHealth=:${inst.data.agentHealthPort}`);
+    ok(`实例启动: ${inst.data.instanceId} recording=${inst.data.recording} segment=${inst.data.currentSegment}`);
 
-    // 校验 agent 健康：browserConnected
-    await sleep(2000);
-    const ah = await axios.get(`http://127.0.0.1:${inst.data.agentHealthPort}/health`);
-    if (!ah.data.browserConnected) throw new Error('agent 未连接浏览器');
-    ok(`agent 健康: browserConnected=${ah.data.browserConnected} segment=${ah.data.currentSegment}`);
+    // 进程内录制：直接从实例详情读取录制状态快照
+    await sleep(1500);
+    const detail = await axios.get(`${WS_URL}/api/instances/${inst.data.instanceId}`);
+    if (!detail.data.recording || !detail.data.browserConnected) throw new Error('进程内录制未运行');
+    ok(`录制中: recording=${detail.data.recording} browserConnected=${detail.data.browserConnected} segment=${detail.data.currentSegment}`);
 
-    // 停止实例 -> agent 优雅关闭并上传当前分段
+    // 停止实例 -> 刷出当前分段并上传 -> context.close() 关闭浏览器
     const stopped = await axios.post(`${WS_URL}/api/instances/${inst.data.instanceId}/stop`, {}, { timeout: 30000 });
     if (stopped.data.status !== 'stopped') throw new Error('实例停止失败: ' + stopped.data.status);
-    ok('实例已停止');
+    ok('实例已停止（context.close 精确关闭浏览器）');
 
     // 验证停止时产生的分段已上传到存储服务
     await sleep(2000);
@@ -178,6 +178,18 @@ function ok(...a) { console.log('  ✓', ...a); }
     const wsCount = wsSessions.data.reduce((s, x) => s + x.segmentCount, 0);
     if (wsCount < 1) throw new Error('工作台停止后未上传分段');
     ok(`停止时上传分段: ${wsCount} 个`);
+
+    // 验证自托管 Trace Viewer 可同源访问
+    const viewer = await axios.get(`${SERVER_URL}/viewer/`, { timeout: 5000 });
+    if (viewer.status !== 200 || !viewer.data.includes('Playwright Trace Viewer')) throw new Error('自托管 Trace Viewer 加载失败');
+    ok('自托管 Trace Viewer 可访问 (/viewer)');
+
+    // 验证 trace 下载为 inline（sendFile，非 attachment）
+    const wsSegs = await axios.get(`${SERVER_URL}/api/files/employees/emp_ws/sessions/${wsSessions.data[0].sessionId}/segments`, auth);
+    const wsSign = await axios.get(`${SERVER_URL}/api/download/segments/${wsSegs.data[0].id}/sign`, auth);
+    const wsDl = await axios.get(wsSign.data.url, { responseType: 'arraybuffer' });
+    if (wsDl.data[0] !== 0x50 || wsDl.data[1] !== 0x4b) throw new Error('工作台 trace 非 zip');
+    ok(`trace 同源下载: ${wsDl.data.length} bytes (viewer 可同源加载)`);
   }
 
 

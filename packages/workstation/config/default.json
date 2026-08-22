@@ -4,16 +4,18 @@
   "profilesDir": "./profiles",
   "browser": {
     "executablePath": "",
+    "headless": false,
     "args": ["--no-first-run", "--no-default-browser-check"],
     "startingUrl": "about:blank"
   },
-  "cdpPortRange": {
-    "min": 9300,
-    "max": 9399
-  },
-  "agent": {
-    "script": "packages/recording-agent/src/index.js",
-    "segmentDurationMs": 1800000
+  "recording": {
+    "segmentDurationMs": 1800000,
+    "deleteAfterUpload": true,
+    "retry": {
+      "maxAttempts": 5,
+      "baseDelayMs": 2000,
+      "maxDelayMs": 60000
+    }
   },
   "storageServerUrl": "http://localhost:4000",
   "uploadToken": "dev-upload-token"

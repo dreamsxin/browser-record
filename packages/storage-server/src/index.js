@@ -29,6 +29,17 @@ function createApp(config) {
     res.json({ status: 'ok', service: 'storage-server', timestamp: Date.now() });
   });
 
+  // 自托管 Playwright Trace Viewer（静态前端）。
+  // viewer 与 trace 下载同源，避免 trace.playwright.dev 跨域 fetch localhost
+  // 触发的混合内容 / Private Network Access 阻断。
+  const viewerDir = path.join(path.dirname(require.resolve('playwright-core')), 'lib', 'vite', 'traceViewer');
+  if (fs.existsSync(viewerDir)) {
+    app.use('/viewer', express.static(viewerDir));
+    console.log(`[viewer] Trace Viewer 自托管于 /viewer (来源: ${viewerDir})`);
+  } else {
+    console.warn(`[viewer] 未找到 Playwright Trace Viewer 静态目录: ${viewerDir}`);
+  }
+
   app.use('/api/auth', buildAuthRouter(config));
   app.use('/api/upload', buildUploadRouter(config));
   app.use('/api/files', buildFilesRouter(config));

@@ -34,12 +34,11 @@ function createApp(config) {
     res.json(manager.list());
   });
 
-  // 单个实例详情（含 agent 健康）
-  app.get('/api/instances/:id', async (req, res) => {
+  // 单个实例详情（含录制状态快照）
+  app.get('/api/instances/:id', (req, res) => {
     const instance = manager.get(req.params.id);
     if (!instance) return res.status(404).json({ error: 'not_found' });
-    const health = await manager.getAgentHealth(req.params.id);
-    res.json({ ...instance, agentHealth: health });
+    res.json(instance);
   });
 
   // 停止实例
@@ -69,7 +68,7 @@ async function main() {
   const config = loadConfig();
   console.log('=== Browser Record Workstation 启动 ===');
   console.log(`profile 目录: ${config.profilesDir}`);
-  console.log(`CDP 端口范围: ${config.cdpPortRange.min}-${config.cdpPortRange.max}`);
+  console.log(`录制分段时长: ${((config.recording?.segmentDurationMs || config.agent?.segmentDurationMs || 1800000) / 60000).toFixed(0)} 分钟`);
   console.log(`存储服务: ${config.storageServerUrl}`);
   const { app } = createApp(config);
   app.listen(config.port, config.host, () => {

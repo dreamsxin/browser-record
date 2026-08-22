@@ -1,10 +1,15 @@
 # Dependencies
 node_modules/
 
-# Runtime data (files, database, traces)
+# Runtime data (files, database, traces, browser profiles)
+profiles/
+data/
 packages/recording-agent/traces/
 packages/storage-server/data/
 packages/storage-server/logs/
+
+# ZCode plans / internal
+.zcode/
 
 # Logs
 *.log
