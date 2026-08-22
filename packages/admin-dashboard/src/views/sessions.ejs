@@ -29,6 +29,7 @@
         <thead>
           <tr>
             <th>会话 ID</th>
+            <th>模式</th>
             <th>状态</th>
             <th>分段数</th>
             <th>总大小</th>
@@ -41,14 +42,18 @@
           <% sessions.forEach((s) => { %>
           <tr>
             <td><%= s.sessionId %></td>
+            <td><%= s.recordingMode === 'video' ? 'Video' : 'Trace' %></td>
             <td><%= s.status === 'recording' ? '录制中' : '已结束' %></td>
             <td><%= s.segmentCount %></td>
             <td><%= s.totalBytesFmt %></td>
             <td><%= s.startTimeFmt %></td>
             <td><%= s.status === 'recording' ? '录制中' : s.endTimeFmt %></td>
             <td>
-              <a class="link" href="/operations/<%= encodeURIComponent(employeeId) %>/<%= encodeURIComponent(s.sessionId) %>">操作回放</a>
-              <% if (s.segmentCount > 0) { %> · <a class="link" href="/employees/<%= encodeURIComponent(employeeId) %>/sessions/<%= encodeURIComponent(s.sessionId) %>/segments">Trace</a><% } %>
+              <% if (s.recordingMode === 'video') { %>
+                <a class="link" href="/video/<%= encodeURIComponent(employeeId) %>/<%= encodeURIComponent(s.sessionId) %>">视频回放</a>
+              <% } else if (s.segmentCount > 0) { %>
+                <a class="link" href="/employees/<%= encodeURIComponent(employeeId) %>/sessions/<%= encodeURIComponent(s.sessionId) %>/segments">Trace 回放</a>
+              <% } else { %>—<% } %>
             </td>
           </tr>
           <% }) %>

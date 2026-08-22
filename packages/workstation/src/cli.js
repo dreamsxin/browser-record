@@ -43,7 +43,7 @@ function request(method, p, body) {
 function fmtInstance(i) {
   const started = i.startedAt ? new Date(i.startedAt).toLocaleString() : '-';
   const rec = i.recording ? '录制中' : '未录制';
-  return `${i.instanceId.padEnd(22)} status=${(i.status || '').padEnd(16)} ${rec.padEnd(6)} seg=${i.currentSegment ?? '-'}  total=${i.totalSegments ?? 0}  started=${started}`;
+  return `${i.instanceId.padEnd(22)} mode=${(i.recordingMode || 'trace').padEnd(6)} status=${(i.status || '').padEnd(16)} ${rec.padEnd(6)} seg=${i.currentSegment ?? '-'}  total=${i.totalSegments ?? 0}  started=${started}`;
 }
 
 (async () => {
@@ -58,7 +58,8 @@ function fmtInstance(i) {
     } else if (cmd === 'start') {
       const idx = rest.indexOf('--id'); const employeeId = idx >= 0 ? rest[idx + 1] : undefined;
       const uidx = rest.indexOf('--url'); const url = uidx >= 0 ? rest[uidx + 1] : undefined;
-      const r = await request('POST', '/api/instances', { employeeId, startingUrl: url });
+      const midx = rest.indexOf('--mode'); const recordingMode = midx >= 0 ? rest[midx + 1] : 'trace';
+      const r = await request('POST', '/api/instances', { employeeId, startingUrl: url, recordingMode });
       if (r.status !== 200) { console.error('启动失败:', r.data); process.exit(1); }
       console.log('已启动实例：\n  ' + fmtInstance(r.data));
     } else if (cmd === 'stop') {
@@ -85,7 +86,7 @@ function fmtInstance(i) {
     } else {
       console.log('workstation — 浏览器实例管理 CLI\n');
       console.log('用法：');
-      console.log('  workstation start [--id <employeeId>] [--url <startingUrl>]');
+      console.log('  workstation start [--id <employeeId>] [--url <startingUrl>] [--mode trace|video]');
       console.log('  workstation stop <instanceId>');
       console.log('  workstation stop-all');
       console.log('  workstation remove <instanceId>');

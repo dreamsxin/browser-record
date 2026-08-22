@@ -23,7 +23,7 @@ const { finalizeTrace } = require('../../live-trace-recorder/src/finalizeTrace')
  *  - sessionId 每次启动实例生成（不绑定进程生命周期）
  */
 class InProcessRecorder {
-  constructor({ employeeId, segmentDurationMs, storageServerUrl, uploadToken, localTracesDir, rawTracesDir, retry, deleteAfterUpload }) {
+  constructor({ employeeId, sessionId, segmentDurationMs, storageServerUrl, uploadToken, localTracesDir, rawTracesDir, retry, deleteAfterUpload }) {
     this.employeeId = employeeId;
     this.segmentDurationMs = segmentDurationMs || 1800000;
     this.storageServerUrl = storageServerUrl;
@@ -36,7 +36,7 @@ class InProcessRecorder {
     this.heartbeatTimer = null;
     this.lifecycleClosed = false;
     this.context = null;
-    this.sessionId = String(Date.now());
+    this.sessionId = String(sessionId || Date.now());
     this.segmentIndex = 0;
     this.currentSegmentStart = 0;
     this.currentTracePath = '';
@@ -154,7 +154,7 @@ class InProcessRecorder {
   async _registerSession() {
     try {
       await axios.post(`${this.lifecycleUrl}/session/start`, {
-        employeeId: this.employeeId, sessionId: this.sessionId, startedAt: Date.now(),
+        employeeId: this.employeeId, sessionId: this.sessionId, startedAt: Date.now(), recordingMode: 'trace',
       }, { headers: { 'X-Upload-Token': this.uploadToken }, timeout: 5000 });
     } catch (err) {
       this.state.lastError = `lifecycle start: ${err.message}`;

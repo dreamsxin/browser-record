@@ -8,8 +8,8 @@
     "packages/storage-server",
     "packages/admin-dashboard",
     "packages/workstation",
-    "packages/operation-recorder",
     "packages/live-trace-recorder",
+    "packages/video-recorder",
     "packages/playwright-custom"
   ],
   "scripts": {

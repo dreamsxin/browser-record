@@ -1,5 +1,5 @@
 # packages\playwright-core\lib\coreBundle.js
-# total: 3345.8 KB
+# total: 3345.9 KB
 
 ## Inlined (398)
     0.3 KB  packages/isomorphic/abortSignal.ts
@@ -259,7 +259,7 @@
     2.4 KB  packages/playwright-core/src/server/userAgent.ts
     7.6 KB  packages/playwright-core/src/server/usKeyboardLayout.ts
     0.9 KB  packages/playwright-core/src/server/utils.ts
-    6.7 KB  packages/playwright-core/src/server/videoRecorder.ts
+    6.8 KB  packages/playwright-core/src/server/videoRecorder.ts
     5.1 KB  packages/playwright-core/src/server/webkit/webkit.ts
     2.9 KB  packages/playwright-core/src/server/webkit/webview/syncServer.ts
    11.3 KB  packages/playwright-core/src/server/webkit/webview/wvBrowser.ts

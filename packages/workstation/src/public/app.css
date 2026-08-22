@@ -40,8 +40,8 @@ tr:last-child td { border-bottom: none; }
 .btn-primary:hover { background: var(--primary-dark); }
 .btn-danger { background: var(--danger); color: #fff; }
 .btn-ghost { background: transparent; color: var(--muted); border: 1px solid var(--border); }
-.toolbar { display: flex; gap: 10px; align-items: center; margin-bottom: 20px; }
-.toolbar input { padding: 8px 10px; border: 1px solid var(--border); border-radius: 6px; font-size: 14px; }
+.toolbar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 20px; }
+.toolbar input, .toolbar select { padding: 8px 10px; border: 1px solid var(--border); border-radius: 6px; font-size: 14px; background:#fff; }
 .toolbar input[type=text] { width: 200px; }
 .status-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; vertical-align: middle; }
 .status-recording { background: var(--ok); }

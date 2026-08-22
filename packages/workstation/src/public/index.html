@@ -18,6 +18,7 @@
         <div class="toolbar">
           <input type="text" id="employeeId" placeholder="员工 ID（留空自动生成）" />
           <input type="text" id="startingUrl" placeholder="起始页（留空 about:blank）" style="width:280px;" />
+          <select id="recordingMode"><option value="trace">Trace</option><option value="video">Video</option></select>
           <button class="btn btn-primary" onclick="startInstance()">启动实例</button>
         </div>
         <div id="startMsg" class="muted"></div>
@@ -60,7 +61,7 @@ async function refresh() {
     body.innerHTML = `
       <table>
         <thead><tr>
-          <th>实例 / 员工 ID</th><th>状态</th><th>录制</th>
+          <th>实例 / 员工 ID</th><th>模式</th><th>状态</th><th>录制</th>
           <th>当前分段</th><th>累计分段</th><th>启动时间</th><th>操作</th>
         </tr></thead>
         <tbody>${list.map(i => {
@@ -68,6 +69,7 @@ async function refresh() {
           return `
           <tr>
             <td>${i.instanceId}</td>
+            <td>${i.recordingMode === 'video' ? 'Video' : 'Trace'}</td>
             <td><span class="status-dot status-${statusClass(i.status)}"></span>${i.status || '-'}</td>
             <td>${i.recording ? '录制中' : '—'}</td>
             <td>${i.currentSegment ?? '-'}</td>
@@ -93,8 +95,9 @@ async function startInstance() {
   try {
     const employeeId = document.getElementById('employeeId').value.trim() || undefined;
     const startingUrl = document.getElementById('startingUrl').value.trim() || undefined;
-    const inst = await api('POST', '/api/instances', { employeeId, startingUrl });
-    msg.textContent = `已启动: ${inst.instanceId} (cdp=:${inst.cdpPort})`;
+    const recordingMode = document.getElementById('recordingMode').value;
+    const inst = await api('POST', '/api/instances', { employeeId, startingUrl, recordingMode });
+    msg.textContent = `已启动: ${inst.instanceId} (${inst.recordingMode === 'video' ? 'Video' : 'Trace'})`;
     msg.style.color = 'var(--ok)';
     document.getElementById('employeeId').value = '';
     document.getElementById('startingUrl').value = '';

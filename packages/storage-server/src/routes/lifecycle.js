@@ -9,9 +9,9 @@ function buildLifecycleRouter(config) {
   router.use(requireUploadToken(config));
 
   router.post('/session/start', (req, res) => {
-    const { employeeId, sessionId, startedAt } = req.body || {};
+    const { employeeId, sessionId, startedAt, recordingMode } = req.body || {};
     if (!employeeId || !sessionId) return res.status(400).json({ error: 'missing_metadata' });
-    registerSession({ employeeId, sessionId, startedAt: Number(startedAt) || Date.now() });
+    registerSession({ employeeId, sessionId, startedAt: Number(startedAt) || Date.now(), recordingMode: recordingMode === 'video' ? 'video' : 'trace' });
     res.json({ ok: true, employeeId, sessionId, status: 'recording' });
   });
 

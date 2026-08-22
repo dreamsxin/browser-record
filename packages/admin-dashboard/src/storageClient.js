@@ -25,28 +25,16 @@ class StorageClient {
     this.tokenExpiry = Date.now() + (res.data.expiresIn || 1800) * 1000;
   }
 
-  async listOperationEvents(employeeId, sessionId) {
-    const res = await this._get(`/api/operations/${encodeURIComponent(employeeId)}/${encodeURIComponent(sessionId)}/events`);
+  async videoManifest(employeeId, sessionId) {
+    const res = await this._get(`/api/videos/${encodeURIComponent(employeeId)}/${encodeURIComponent(sessionId)}`);
     return res.data;
   }
 
-  async operationManifest(employeeId, sessionId) {
-    const res = await this._get(`/api/operations/${encodeURIComponent(employeeId)}/${encodeURIComponent(sessionId)}/manifest`);
-    return res.data;
-  }
-
-  async signOperationScreenshot(employeeId, sessionId, relativePath) {
-    const res = await this._get(`/api/operations/${encodeURIComponent(employeeId)}/${encodeURIComponent(sessionId)}/screenshots/${relativePath}`);
-    return res.data;
-  }
-
-  async getOperationScreenshot(employeeId, sessionId, relativePath) {
+  async getVideoStream(employeeId, sessionId, pageId, range) {
     await this.ensureToken();
-    const encoded = relativePath.split('/').map(encodeURIComponent).join('/');
-    const res = await axios.get(`${this.baseUrl}/api/operations/${encodeURIComponent(employeeId)}/${encodeURIComponent(sessionId)}/screenshots/${encoded}`, {
-      headers: { Authorization: `Bearer ${this.token}` }, responseType: 'arraybuffer',
+    return axios.get(`${this.baseUrl}/api/videos/${encodeURIComponent(employeeId)}/${encodeURIComponent(sessionId)}/${encodeURIComponent(pageId)}/stream`, {
+      headers: { Authorization: `Bearer ${this.token}`, ...(range ? { Range: range } : {}) }, responseType: 'stream', validateStatus: () => true,
     });
-    return res;
   }
 
   async _get(path, params) {

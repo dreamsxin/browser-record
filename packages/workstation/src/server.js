@@ -20,9 +20,9 @@ function createApp(config) {
 
   // 启动实例
   app.post('/api/instances', async (req, res) => {
-    const { employeeId, startingUrl } = req.body || {};
+    const { employeeId, startingUrl, recordingMode } = req.body || {};
     try {
-      const instance = await manager.start({ employeeId, startingUrl });
+      const instance = await manager.start({ employeeId, startingUrl, recordingMode });
       res.json(instance);
     } catch (err) {
       res.status(400).json({ error: err.message });

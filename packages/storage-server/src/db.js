@@ -30,18 +30,20 @@ function initDb(config) {
       PRIMARY KEY (employee_id, session_id)
     );
     CREATE INDEX IF NOT EXISTS idx_sessions_employee ON sessions(employee_id);
-    CREATE TABLE IF NOT EXISTS operation_chunks (
+    CREATE TABLE IF NOT EXISTS video_archives (
       id TEXT PRIMARY KEY, employee_id TEXT NOT NULL, session_id TEXT NOT NULL,
-      chunk_index INTEGER NOT NULL, events_path TEXT NOT NULL, start_time INTEGER NOT NULL,
-      end_time INTEGER NOT NULL, file_size INTEGER NOT NULL DEFAULT 0, upload_time INTEGER NOT NULL,
-      UNIQUE(employee_id, session_id, chunk_index)
+      archive_path TEXT NOT NULL, manifest_path TEXT NOT NULL, file_size INTEGER NOT NULL,
+      upload_time INTEGER NOT NULL, status TEXT NOT NULL,
+      UNIQUE(employee_id, session_id)
     );
-    CREATE INDEX IF NOT EXISTS idx_operation_chunks_session ON operation_chunks(employee_id, session_id);
     CREATE TABLE IF NOT EXISTS audit_logs (
       id INTEGER PRIMARY KEY AUTOINCREMENT, actor TEXT, action TEXT, employee_id TEXT,
       file_id TEXT, detail TEXT, created_at INTEGER NOT NULL DEFAULT (strftime('%s','now') * 1000)
     );
   `);
+  const sessionColumns = db.prepare('PRAGMA table_info(sessions)').all().map((c) => c.name);
+  if (!sessionColumns.includes('recording_mode'))
+    db.exec("ALTER TABLE sessions ADD COLUMN recording_mode TEXT NOT NULL DEFAULT 'trace'");
   // Idempotent backfill for databases created before lifecycle tables existed.
   db.exec(`
     INSERT INTO employees(employee_id, first_seen, last_seen)
@@ -65,12 +67,12 @@ function registerEmployee(employeeId, now = Date.now()) {
   getDb().prepare(`INSERT INTO employees(employee_id,first_seen,last_seen,status) VALUES(?,?,?,'active')
     ON CONFLICT(employee_id) DO UPDATE SET last_seen=MAX(last_seen, excluded.last_seen)`).run(String(employeeId), now, now);
 }
-function registerSession({ employeeId, sessionId, startedAt = Date.now() }) {
+function registerSession({ employeeId, sessionId, startedAt = Date.now(), recordingMode = 'trace' }) {
   const now = Date.now();
   registerEmployee(employeeId, now);
-  getDb().prepare(`INSERT INTO sessions(employee_id,session_id,started_at,last_seen,status)
-    VALUES(?,?,?,?, 'recording')
-    ON CONFLICT(employee_id,session_id) DO UPDATE SET last_seen=MAX(last_seen, excluded.last_seen)`).run(String(employeeId), String(sessionId), Number(startedAt), now);
+  getDb().prepare(`INSERT INTO sessions(employee_id,session_id,started_at,last_seen,status,recording_mode)
+    VALUES(?,?,?,?, 'recording', ?)
+    ON CONFLICT(employee_id,session_id) DO UPDATE SET last_seen=MAX(last_seen, excluded.last_seen),recording_mode=excluded.recording_mode`).run(String(employeeId), String(sessionId), Number(startedAt), now, recordingMode);
 }
 function touchSession(employeeId, sessionId, now = Date.now()) {
   registerEmployee(employeeId, now);
@@ -114,7 +116,8 @@ function listSessions(employeeId) {
       MIN(start_time) file_start, MAX(end_time) file_end FROM files WHERE employee_id=? GROUP BY session_id)
     SELECT s.session_id sessionId, COALESCE(f.segment_count,0) segmentCount,
       COALESCE(f.total_bytes,0) totalBytes, s.started_at startTime,
-      COALESCE(s.ended_at,f.file_end) endTime, s.status status, s.last_seen lastSeen
+      COALESCE(s.ended_at,f.file_end) endTime, s.status status, s.last_seen lastSeen,
+      s.recording_mode recordingMode
       FROM sessions s LEFT JOIN stats f ON f.session_id=s.session_id
       WHERE s.employee_id=? ORDER BY s.started_at DESC`).all(employeeId, employeeId);
 }

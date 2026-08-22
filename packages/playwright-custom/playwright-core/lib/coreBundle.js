@@ -36879,7 +36879,7 @@ var init_videoRecorder = __esm({
         const w = this._size.width;
         const h = this._size.height;
         const videoFilterArgs = page.getFFmpegVideoFilterArgs?.({ width: w, height: h }) ?? `pad=${w}:${h}:0:0:gray,crop=${w}:${h}:0:0`;
-        const args = `-loglevel error -f matroska -fpsprobesize 0 -probesize 32 -analyzeduration 0 -i pipe:0 -y -an -r ${fps} -c:v vp8 -qmin 0 -qmax 50 -crf 8 -deadline realtime -speed 8 -b:v 1M -threads 1 -vf ${videoFilterArgs}`.split(" ");
+        const args = `-loglevel error -f matroska -fpsprobesize 0 -probesize 32 -analyzeduration 0 -i pipe:0 -y -an -r ${fps} -c:v vp8 -qmin 0 -qmax 50 -crf 8 -deadline realtime -speed 8 -b:v 1M -threads 1 -flush_packets 1 -cluster_time_limit 1000 -cluster_size_limit 1048576 -vf ${videoFilterArgs}`.split(" ");
         args.push(this._outputFile);
         const { launchedProcess, gracefullyClose } = await launchProcess({
           command: this._ffmpegPath,

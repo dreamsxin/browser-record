@@ -15,7 +15,7 @@ const { buildUploadRouter } = require('./routes/upload');
 const { buildFilesRouter } = require('./routes/files');
 const { buildDownloadRouter } = require('./routes/download');
 const { buildLifecycleRouter } = require('./routes/lifecycle');
-const { buildOperationRouter } = require('./routes/operations');
+const { buildVideoRouter } = require('./routes/videos');
 
 function createApp(config) {
   fs.mkdirSync(config.recordingsDir, { recursive: true });
@@ -44,7 +44,7 @@ function createApp(config) {
 
   app.use('/api/auth', buildAuthRouter(config));
   app.use('/api/lifecycle', buildLifecycleRouter(config));
-  app.use('/api/operations', buildOperationRouter(config));
+  app.use('/api/videos', buildVideoRouter(config));
   app.use('/api/upload', buildUploadRouter(config));
   app.use('/api/files', buildFilesRouter(config));
   app.use('/api/download', buildDownloadRouter(config));
