@@ -5,6 +5,7 @@ const path = require('path');
 const crypto = require('crypto');
 const { chromium } = require('playwright');
 const { InProcessRecorder } = require('./inProcessRecorder');
+const { OperationRecorder } = require('../../operation-recorder/src/operationRecorder');
 
 /**
  * 浏览器实例管理器（Playwright 原生启动 + 进程内录制）。
@@ -77,21 +78,37 @@ class InstanceManager {
       cur.closed = true;
       if (cur.status !== 'stopped') cur.status = 'browser_closed';
       if (cur.recorder) {
-        cur.recorder.markBrowserClosed().catch((err) => console.error(`[workstation] 浏览器关闭后状态收敛异常 (${instanceId}):`, err));
+        const close = cur.recorder.markBrowserClosed || cur.recorder.stop;
+        close.call(cur.recorder).catch((err) => console.error(`[workstation] 浏览器关闭后状态收敛异常 (${instanceId}):`, err));
       }
     });
 
-    // 启动进程内录制
+    // 根据模式启动进程内 Trace 或自定义 Operation Recorder
     const rc = this.config.recording || {};
-    const recorder = new InProcessRecorder({
-      employeeId: instanceId,
-      segmentDurationMs: rc.segmentDurationMs || this.config.agent?.segmentDurationMs || 1800000,
-      storageServerUrl: this.config.storageServerUrl,
-      uploadToken: this.config.uploadToken,
-      localTracesDir: path.join(profileDir, 'traces'),
-      retry: rc.retry,
-      deleteAfterUpload: rc.deleteAfterUpload !== false,
-    });
+    const oc = this.config.operations || {};
+    const recorder = this.config.recordingMode === 'operations'
+      ? new OperationRecorder({
+          employeeId: instanceId,
+          sessionId: Date.now(),
+          storageServerUrl: this.config.storageServerUrl,
+          uploadToken: this.config.uploadToken,
+          localDir: path.join(profileDir, 'operations'),
+          chunkDurationMs: oc.chunkDurationMs,
+          maxEvents: oc.maxEvents,
+          maxScreenshotsPerSecond: oc.maxScreenshotsPerSecond,
+          screenshotQuality: oc.screenshotQuality,
+          captureNetworkSummary: oc.captureNetworkSummary,
+          captureConsole: oc.captureConsole,
+        })
+      : new InProcessRecorder({
+          employeeId: instanceId,
+          segmentDurationMs: rc.segmentDurationMs || this.config.agent?.segmentDurationMs || 1800000,
+          storageServerUrl: this.config.storageServerUrl,
+          uploadToken: this.config.uploadToken,
+          localTracesDir: path.join(profileDir, 'traces'),
+          retry: rc.retry,
+          deleteAfterUpload: rc.deleteAfterUpload !== false,
+        });
     instance.recorder = recorder;
 
     try {

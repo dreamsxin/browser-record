@@ -46,7 +46,10 @@
             <td><%= s.totalBytesFmt %></td>
             <td><%= s.startTimeFmt %></td>
             <td><%= s.status === 'recording' ? '录制中' : s.endTimeFmt %></td>
-            <td><a class="link" href="/employees/<%= encodeURIComponent(employeeId) %>/sessions/<%= encodeURIComponent(s.sessionId) %>/segments">查看分段 →</a></td>
+            <td>
+              <a class="link" href="/operations/<%= encodeURIComponent(employeeId) %>/<%= encodeURIComponent(s.sessionId) %>">操作回放</a>
+              <% if (s.segmentCount > 0) { %> · <a class="link" href="/employees/<%= encodeURIComponent(employeeId) %>/sessions/<%= encodeURIComponent(s.sessionId) %>/segments">Trace</a><% } %>
+            </td>
           </tr>
           <% }) %>
         </tbody>

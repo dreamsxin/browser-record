@@ -30,6 +30,13 @@ function initDb(config) {
       PRIMARY KEY (employee_id, session_id)
     );
     CREATE INDEX IF NOT EXISTS idx_sessions_employee ON sessions(employee_id);
+    CREATE TABLE IF NOT EXISTS operation_chunks (
+      id TEXT PRIMARY KEY, employee_id TEXT NOT NULL, session_id TEXT NOT NULL,
+      chunk_index INTEGER NOT NULL, events_path TEXT NOT NULL, start_time INTEGER NOT NULL,
+      end_time INTEGER NOT NULL, file_size INTEGER NOT NULL DEFAULT 0, upload_time INTEGER NOT NULL,
+      UNIQUE(employee_id, session_id, chunk_index)
+    );
+    CREATE INDEX IF NOT EXISTS idx_operation_chunks_session ON operation_chunks(employee_id, session_id);
     CREATE TABLE IF NOT EXISTS audit_logs (
       id INTEGER PRIMARY KEY AUTOINCREMENT, actor TEXT, action TEXT, employee_id TEXT,
       file_id TEXT, detail TEXT, created_at INTEGER NOT NULL DEFAULT (strftime('%s','now') * 1000)

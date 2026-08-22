@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>操作回放 — Browser Record</title>
+  <link rel="stylesheet" href="/app.css" />
+  <style>
+    .operation-layout { display:grid; grid-template-columns:minmax(0,1fr) 360px; gap:16px; }
+    .operation-screen { background:#111; min-height:520px; display:flex; align-items:center; justify-content:center; }
+    .operation-screen img { max-width:100%; max-height:70vh; object-fit:contain; }
+    .operation-events { max-height:70vh; overflow:auto; }
+    .operation-event { display:block; width:100%; text-align:left; border:0; border-bottom:1px solid var(--border); background:#fff; padding:10px 12px; cursor:pointer; }
+    .operation-event:hover, .operation-event.active { background:#eff6ff; }
+    .operation-event .time { color:var(--muted); font-size:12px; }
+    .operation-event .type { font-weight:600; margin:0 6px; }
+    .operation-meta { color:var(--muted); font-size:13px; margin:8px 0 16px; }
+    @media (max-width: 800px) { .operation-layout { grid-template-columns:1fr; } .operation-events { max-height:320px; } }
+  </style>
+</head>
+<body>
+  <nav class="navbar"><div class="brand"><a href="/employees">操作监控后台</a></div><span class="muted"><%= user.username %></span></nav>
+  <div class="container">
+    <div class="breadcrumb"><a href="/employees">员工</a> / <%= employeeId %> / <%= sessionId %> / 操作回放</div>
+    <div class="card-header">操作回放</div>
+    <div class="operation-meta">状态：<%= session?.status === 'recording' ? '录制中' : '已结束' %>　事件：<%= events.length %>　分段：<%= manifest.chunks.length %></div>
+    <div class="operation-layout">
+      <div class="card operation-screen"><img id="screen" alt="操作截图" /></div>
+      <div class="card operation-events" id="events">
+        <% if (!events.length) { %><div class="empty">暂无操作事件</div><% } %>
+        <% events.forEach((event, index) => { %>
+          <button class="operation-event" data-index="<%= index %>" data-screenshot="<%= event.file || '' %>" onclick="selectEvent(<%= index %>)">
+            <span class="time"><%= new Date(event.timestamp).toLocaleString('zh-CN', { hour12: false }) %></span>
+            <span class="type"><%= event.type %></span>
+            <span><%= event.url || event.name || event.text || event.reason || '' %></span>
+          </button>
+        <% }) %>
+      </div>
+    </div>
+  </div>
+<script>
+const events = <%- JSON.stringify(events) %>;
+function selectEvent(index) {
+  document.querySelectorAll('.operation-event').forEach((el) => el.classList.toggle('active', Number(el.dataset.index) === index));
+  const e = events[index];
+  if (e && e.file) document.getElementById('screen').src = `/operations/<%= encodeURIComponent(employeeId) %>/<%= encodeURIComponent(sessionId) %>/screenshot?path=${encodeURIComponent(e.file)}`;
+}
+if (events.length) selectEvent(0);
+</script>
+</body>
+</html>

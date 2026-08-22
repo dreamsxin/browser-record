@@ -161,6 +161,31 @@ function createApp(config) {
     }
   });
 
+  // 自定义操作回放：事件时间线 + 截图，不依赖 Playwright Viewer
+  app.get('/operations/:employeeId/:sessionId', requireLogin, async (req, res) => {
+    const { employeeId, sessionId } = req.params;
+    try {
+      const [events, manifest, sessions] = await Promise.all([
+        storage.listOperationEvents(employeeId, sessionId),
+        storage.operationManifest(employeeId, sessionId),
+        storage.listSessions(employeeId),
+      ]);
+      const session = sessions.find((s) => String(s.sessionId) === String(sessionId));
+      res.render('operation-viewer', { user: req.user, employeeId, sessionId, events, manifest, session });
+    } catch (err) {
+      res.status(500).render('error', { error: err.message });
+    }
+  });
+
+  app.get('/operations/:employeeId/:sessionId/screenshot', requireLogin, async (req, res) => {
+    try {
+      const image = await storage.getOperationScreenshot(req.params.employeeId, req.params.sessionId, req.query.path || '');
+      res.type('image/jpeg').send(image.data);
+    } catch (err) {
+      res.status(404).json({ error: 'screenshot_not_found' });
+    }
+  });
+
   // 回放页：嵌入 Trace Viewer，iframe 加载签名 URL
   app.get('/view/:employeeId/:sessionId/:segmentId', requireLogin, async (req, res) => {
     const { employeeId, sessionId, segmentId } = req.params;

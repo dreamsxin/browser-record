@@ -25,6 +25,30 @@ class StorageClient {
     this.tokenExpiry = Date.now() + (res.data.expiresIn || 1800) * 1000;
   }
 
+  async listOperationEvents(employeeId, sessionId) {
+    const res = await this._get(`/api/operations/${encodeURIComponent(employeeId)}/${encodeURIComponent(sessionId)}/events`);
+    return res.data;
+  }
+
+  async operationManifest(employeeId, sessionId) {
+    const res = await this._get(`/api/operations/${encodeURIComponent(employeeId)}/${encodeURIComponent(sessionId)}/manifest`);
+    return res.data;
+  }
+
+  async signOperationScreenshot(employeeId, sessionId, relativePath) {
+    const res = await this._get(`/api/operations/${encodeURIComponent(employeeId)}/${encodeURIComponent(sessionId)}/screenshots/${relativePath}`);
+    return res.data;
+  }
+
+  async getOperationScreenshot(employeeId, sessionId, relativePath) {
+    await this.ensureToken();
+    const encoded = relativePath.split('/').map(encodeURIComponent).join('/');
+    const res = await axios.get(`${this.baseUrl}/api/operations/${encodeURIComponent(employeeId)}/${encodeURIComponent(sessionId)}/screenshots/${encoded}`, {
+      headers: { Authorization: `Bearer ${this.token}` }, responseType: 'arraybuffer',
+    });
+    return res;
+  }
+
   async _get(path, params) {
     await this.ensureToken();
     try {
