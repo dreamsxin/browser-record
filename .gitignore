@@ -4,6 +4,7 @@ node_modules/
 # Runtime data (files, database, traces, browser profiles)
 profiles/
 data/
+traces/
 packages/recording-agent/traces/
 packages/storage-server/data/
 packages/storage-server/logs/
