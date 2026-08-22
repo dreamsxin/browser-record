@@ -1,0 +1,25 @@
+{
+  "name": "browser-record",
+  "version": "1.0.0",
+  "private": true,
+  "description": "浏览器操作录制与回放系统 — 基于 Playwright Tracing 的分段录制 + 循环覆盖 + Trace Viewer 回放",
+  "workspaces": [
+    "packages/recording-agent",
+    "packages/storage-server",
+    "packages/admin-dashboard",
+    "packages/workstation"
+  ],
+  "scripts": {
+    "agent": "npm run start -w @browser-record/recording-agent",
+    "server": "npm run start -w @browser-record/storage-server",
+    "dashboard": "npm run start -w @browser-record/admin-dashboard",
+    "workstation": "npm run start -w @browser-record/workstation",
+    "workstation:cli": "npm run cli -w @browser-record/workstation --",
+    "install:all": "npm install",
+    "postinstall": "npm run playwright:install",
+    "playwright:install": "playwright install chromium || node packages/recording-agent/scripts/skip-playwright.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

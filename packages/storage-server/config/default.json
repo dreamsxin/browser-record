@@ -1,0 +1,23 @@
+{
+  "port": 4000,
+  "host": "0.0.0.0",
+  "dataDir": "./data",
+  "recordingsDir": "./data/recordings",
+  "dbPath": "./data/storage.db",
+  "uploads": {
+    "maxFileSize": 524288000
+  },
+  "auth": {
+    "jwtSecret": "change-me-in-production",
+    "uploadToken": "dev-upload-token",
+    "adminUsername": "admin",
+    "adminPassword": "admin123",
+    "tokenTtlSeconds": 1800
+  },
+  "retention": {
+    "maxSessionsPerEmployee": 20,
+    "dailyCleanupHour": 3,
+    "dailyCleanupMinute": 0,
+    "maxBytesPerEmployee": 5368709120
+  }
+}

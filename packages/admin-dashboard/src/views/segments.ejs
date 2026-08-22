@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>分段列表 — 操作监控后台</title>
+  <link rel="stylesheet" href="/app.css" />
+</head>
+<body>
+  <nav class="navbar">
+    <div class="brand"><a href="/employees">操作监控后台</a></div>
+    <div class="actions">
+      <span class="muted"><%= user.username %></span>
+      <form method="POST" action="/logout" style="display:inline;margin-left:12px;">
+        <button type="submit" class="btn btn-ghost">退出</button>
+      </form>
+    </div>
+  </nav>
+  <div class="container">
+    <div class="breadcrumb">
+      <a href="/employees">员工</a> /
+      <a href="/employees/<%= encodeURIComponent(employeeId) %>/sessions"><%= employeeId %></a> /
+      <span><%= sessionId %></span> / 分段
+    </div>
+    <div class="card">
+      <div class="card-header">分段文件（会话 <%= sessionId %>）</div>
+      <% if (segments.length === 0) { %>
+        <div class="empty">该会话暂无分段</div>
+      <% } else { %>
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>开始时间</th>
+            <th>结束时间</th>
+            <th>大小</th>
+            <th>上传时间</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <% segments.forEach((s) => { %>
+          <tr>
+            <td><%= s.segmentIndex %></td>
+            <td><%= s.startTimeFmt %></td>
+            <td><%= s.endTimeFmt %></td>
+            <td><%= s.fileSizeFmt %></td>
+            <td><%= new Date(s.uploadTime).toISOString().replace('T',' ').replace(/\..*/,'') %></td>
+            <td><a class="btn btn-primary" href="/view/<%= encodeURIComponent(employeeId) %>/<%= encodeURIComponent(sessionId) %>/<%= encodeURIComponent(s.id) %>">回放</a></td>
+          </tr>
+          <% }) %>
+        </tbody>
+      </table>
+      <% } %>
+    </div>
+  </div>
+</body>
+</html>

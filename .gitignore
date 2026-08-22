@@ -1,0 +1,26 @@
+# Dependencies
+node_modules/
+
+# Runtime data (files, database, traces)
+packages/recording-agent/traces/
+packages/storage-server/data/
+packages/storage-server/logs/
+
+# Logs
+*.log
+logs/
+npm-debug.log*
+
+# Env / local config
+.env
+.env.local
+config/local.json
+config/*.local.json
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/

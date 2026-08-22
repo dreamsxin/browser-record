@@ -1,0 +1,25 @@
+{
+  "employeeId": "employee_001",
+  "cdpEndpoint": "http://localhost:9222",
+  "segmentDurationMs": 1800000,
+  "storageServerUrl": "http://localhost:4000",
+  "uploadToken": "dev-upload-token",
+  "localTracesDir": "./traces",
+  "retry": {
+    "maxAttempts": 5,
+    "baseDelayMs": 2000,
+    "maxDelayMs": 60000
+  },
+  "reconnect": {
+    "enabled": true,
+    "initialDelayMs": 1000,
+    "maxDelayMs": 30000,
+    "maxAttempts": 0
+  },
+  "health": {
+    "enabled": true,
+    "port": 4100,
+    "host": "127.0.0.1"
+  },
+  "deleteAfterUpload": true
+}

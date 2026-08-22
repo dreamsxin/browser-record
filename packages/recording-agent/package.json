@@ -1,0 +1,16 @@
+{
+  "name": "@browser-record/recording-agent",
+  "version": "1.0.0",
+  "private": true,
+  "description": "客户端录制代理：连接本地浏览器，按 30 分钟分段录制 Playwright Tracing 并上传",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "node --watch src/index.js"
+  },
+  "dependencies": {
+    "axios": "^1.7.7",
+    "form-data": "^4.0.0",
+    "playwright": "^1.47.0"
+  }
+}

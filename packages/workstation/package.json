@@ -1,0 +1,19 @@
+{
+  "name": "@browser-record/workstation",
+  "version": "1.0.0",
+  "private": true,
+  "description": "员工工作台程序：启动/关闭浏览器实例，自动分配 profile 目录与 CDP 端口，并自动启动 recording-agent 录制",
+  "main": "src/index.js",
+  "bin": {
+    "workstation": "src/cli.js"
+  },
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js",
+    "cli": "node src/cli.js"
+  },
+  "dependencies": {
+    "express": "^4.21.0",
+    "morgan": "^1.10.0"
+  }
+}

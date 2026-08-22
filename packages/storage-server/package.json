@@ -1,0 +1,19 @@
+{
+  "name": "@browser-record/storage-server",
+  "version": "1.0.0",
+  "private": true,
+  "description": "中央存储服务：接收分段录制文件、存储元数据、循环覆盖清理、提供签名下载",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "node --watch src/index.js"
+  },
+  "dependencies": {
+    "better-sqlite3": "^11.3.0",
+    "cors": "^2.8.5",
+    "express": "^4.21.0",
+    "jsonwebtoken": "^9.0.2",
+    "multer": "^1.4.5-lts.1",
+    "morgan": "^1.10.0"
+  }
+}

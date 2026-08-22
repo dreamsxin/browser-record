@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>会话列表 — 操作监控后台</title>
+  <link rel="stylesheet" href="/app.css" />
+</head>
+<body>
+  <nav class="navbar">
+    <div class="brand"><a href="/employees">操作监控后台</a></div>
+    <div class="actions">
+      <span class="muted"><%= user.username %></span>
+      <form method="POST" action="/logout" style="display:inline;margin-left:12px;">
+        <button type="submit" class="btn btn-ghost">退出</button>
+      </form>
+    </div>
+  </nav>
+  <div class="container">
+    <div class="breadcrumb">
+      <a href="/employees">员工</a> / <span><%= employeeId %></span> / 会话
+    </div>
+    <div class="card">
+      <div class="card-header">录制会话（<%= employeeId %>）</div>
+      <% if (sessions.length === 0) { %>
+        <div class="empty">该员工暂无录制会话</div>
+      <% } else { %>
+      <table>
+        <thead>
+          <tr>
+            <th>会话 ID</th>
+            <th>分段数</th>
+            <th>总大小</th>
+            <th>开始时间</th>
+            <th>结束时间</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <% sessions.forEach((s) => { %>
+          <tr>
+            <td><%= s.sessionId %></td>
+            <td><%= s.segmentCount %></td>
+            <td><%= s.totalBytesFmt %></td>
+            <td><%= s.startTimeFmt %></td>
+            <td><%= s.endTimeFmt %></td>
+            <td><a class="link" href="/employees/<%= encodeURIComponent(employeeId) %>/sessions/<%= encodeURIComponent(s.sessionId) %>/segments">查看分段 →</a></td>
+          </tr>
+          <% }) %>
+        </tbody>
+      </table>
+      <% } %>
+    </div>
+  </div>
+</body>
+</html>

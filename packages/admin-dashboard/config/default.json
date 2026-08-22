@@ -1,0 +1,13 @@
+{
+  "port": 3000,
+  "host": "0.0.0.0",
+  "storageServerUrl": "http://localhost:4000",
+  "admin": {
+    "username": "admin",
+    "password": "admin123"
+  },
+  "session": {
+    "secret": "change-me-dashboard-session-secret",
+    "ttlSeconds": 28800
+  }
+}
