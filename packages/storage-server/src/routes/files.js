@@ -3,6 +3,7 @@
 const express = require('express');
 const {
   listEmployees,
+  listAllSessions,
   listSessions,
   listSegments,
   listSegmentsByTimeRange,
@@ -15,6 +16,11 @@ function buildFilesRouter(config) {
   const router = express.Router();
 
   router.use(requireAuth(config));
+
+  router.get('/sessions', (req, res) => {
+    const employeeId = String(req.query.employeeId || '').trim() || undefined;
+    res.json(listAllSessions(employeeId));
+  });
 
   // 员工列表（带汇总统计）
   router.get('/employees', (req, res) => {

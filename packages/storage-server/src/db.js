@@ -44,6 +44,9 @@ function initDb(config) {
   const sessionColumns = db.prepare('PRAGMA table_info(sessions)').all().map((c) => c.name);
   if (!sessionColumns.includes('recording_mode'))
     db.exec("ALTER TABLE sessions ADD COLUMN recording_mode TEXT NOT NULL DEFAULT 'trace'");
+  const videoColumns = db.prepare('PRAGMA table_info(video_archives)').all().map((c) => c.name);
+  if (!videoColumns.includes('media_size'))
+    db.exec('ALTER TABLE video_archives ADD COLUMN media_size INTEGER NOT NULL DEFAULT 0');
   // Idempotent backfill for databases created before lifecycle tables existed.
   db.exec(`
     INSERT INTO employees(employee_id, first_seen, last_seen)
@@ -110,17 +113,24 @@ function listEmployees() {
       FROM employees e LEFT JOIN stats f ON f.employee_id=e.employee_id
       LEFT JOIN session_stats s ON s.employee_id=e.employee_id ORDER BY lastEnd DESC`).all();
 }
-function listSessions(employeeId) {
-  return getDb().prepare(`
-    WITH stats AS (SELECT session_id, COUNT(*) segment_count, SUM(file_size) total_bytes,
-      MIN(start_time) file_start, MAX(end_time) file_end FROM files WHERE employee_id=? GROUP BY session_id)
-    SELECT s.session_id sessionId, COALESCE(f.segment_count,0) segmentCount,
-      COALESCE(f.total_bytes,0) totalBytes, s.started_at startTime,
-      COALESCE(s.ended_at,f.file_end) endTime, s.status status, s.last_seen lastSeen,
-      s.recording_mode recordingMode
-      FROM sessions s LEFT JOIN stats f ON f.session_id=s.session_id
-      WHERE s.employee_id=? ORDER BY s.started_at DESC`).all(employeeId, employeeId);
+function listAllSessions(employeeId) {
+  const where = employeeId ? 'WHERE s.employee_id=?' : '';
+  const sql = `WITH trace_stats AS (
+    SELECT employee_id,session_id,COUNT(*) segment_count,COALESCE(SUM(file_size),0) trace_bytes,
+      MIN(start_time) file_start,MAX(end_time) file_end FROM files GROUP BY employee_id,session_id)
+    SELECT s.employee_id employeeId,s.session_id sessionId,COALESCE(t.segment_count,0) segmentCount,
+      COALESCE(t.trace_bytes,0) traceBytes,COALESCE(v.file_size,0) videoArchiveBytes,
+      COALESCE(v.media_size,0) videoMediaBytes,
+      COALESCE(t.trace_bytes,0)+COALESCE(v.media_size,0) totalBytes,
+      COALESCE(t.trace_bytes,0)+COALESCE(v.file_size,0)+COALESCE(v.media_size,0) physicalBytes,
+      s.started_at startTime,COALESCE(s.ended_at,t.file_end) endTime,s.status,s.last_seen lastSeen,
+      s.recording_mode recordingMode,v.status videoStatus,v.upload_time videoUploadTime
+    FROM sessions s LEFT JOIN trace_stats t ON t.employee_id=s.employee_id AND t.session_id=s.session_id
+    LEFT JOIN video_archives v ON v.employee_id=s.employee_id AND v.session_id=s.session_id
+    ${where} ORDER BY s.started_at DESC`;
+  return employeeId ? getDb().prepare(sql).all(employeeId) : getDb().prepare(sql).all();
 }
+function listSessions(employeeId) { return listAllSessions(employeeId).map(({ employeeId: _employeeId, ...session }) => session); }
 function listSegments(employeeId, sessionId) { return getDb().prepare(`SELECT id,segment_index segmentIndex,file_path filePath,start_time startTime,end_time endTime,file_size fileSize,upload_time uploadTime FROM files WHERE employee_id=? AND session_id=? ORDER BY segment_index`).all(employeeId, sessionId); }
 function listSegmentsByTimeRange(employeeId, fromTs, toTs, limit=100) { return getDb().prepare(`SELECT id,session_id sessionId,segment_index segmentIndex,file_path filePath,start_time startTime,end_time endTime,file_size fileSize,upload_time uploadTime FROM files WHERE employee_id=? AND end_time>=? AND start_time<=? ORDER BY start_time DESC LIMIT ?`).all(employeeId, Number(fromTs), Number(toTs), Number(limit)); }
 function deleteFileRow(id) { return getDb().prepare('DELETE FROM files WHERE id=?').run(id); }
@@ -128,4 +138,4 @@ function listSessionsOrdered(employeeId) { return getDb().prepare(`SELECT sessio
 function totalBytesForEmployee(employeeId) { return Number(getDb().prepare('SELECT COALESCE(SUM(file_size),0) total FROM files WHERE employee_id=?').get(employeeId).total) || 0; }
 function insertAudit({ actor, action, employeeId, fileId, detail }) { getDb().prepare('INSERT INTO audit_logs(actor,action,employee_id,file_id,detail) VALUES(?,?,?,?,?)').run(actor || 'unknown', action, employeeId || null, fileId || null, detail || null); }
 
-module.exports = { initDb, getDb, registerEmployee, registerSession, touchSession, closeSession, upsertLifecycleForFile, insertFile, getFileById, listEmployees, listSessions, listSegments, listSegmentsByTimeRange, deleteFileRow, listSessionsOrdered, totalBytesForEmployee, insertAudit };
+module.exports = { initDb, getDb, registerEmployee, registerSession, touchSession, closeSession, upsertLifecycleForFile, insertFile, getFileById, listEmployees, listAllSessions, listSessions, listSegments, listSegmentsByTimeRange, deleteFileRow, listSessionsOrdered, totalBytesForEmployee, insertAudit };

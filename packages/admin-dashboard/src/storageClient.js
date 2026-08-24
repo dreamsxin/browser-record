@@ -59,6 +59,11 @@ class StorageClient {
     }
   }
 
+  async listAllSessions(employeeId) {
+    const res = await this._get('/api/files/sessions', employeeId ? { employeeId } : undefined);
+    return res.data;
+  }
+
   async listEmployees() {
     const res = await this._get('/api/files/employees');
     return res.data;

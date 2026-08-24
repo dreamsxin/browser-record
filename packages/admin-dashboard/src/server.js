@@ -75,7 +75,7 @@ function createApp(config) {
 
   app.get('/', (req, res) => {
     const s = getSession(req);
-    if (s) return res.redirect('/employees');
+    if (s) return res.redirect('/sessions');
     res.redirect('/login');
   });
 
@@ -92,7 +92,7 @@ function createApp(config) {
         maxAge: SESSION_TTL,
         sameSite: 'lax',
       });
-      return res.redirect('/employees');
+      return res.redirect('/sessions');
     }
     res.render('login', { error: '用户名或密码错误' });
   });
@@ -105,40 +105,22 @@ function createApp(config) {
     res.redirect('/login');
   });
 
-  app.get('/employees', requireLogin, async (req, res) => {
-    try {
-      const employees = await storage.listEmployees();
-      res.render('employees', {
-        user: req.user,
-        employees: employees.map((e) => ({
-          ...e,
-          firstStartFmt: fmtTime(e.firstStart),
-          lastEndFmt: fmtTime(e.lastEnd),
-          totalBytesFmt: fmtBytes(e.totalBytes),
-        })),
-      });
-    } catch (err) {
-      res.status(500).render('error', { error: err.message });
-    }
-  });
+  app.get('/employees', requireLogin, (req, res) => res.redirect('/sessions'));
 
-  app.get('/employees/:employeeId/sessions', requireLogin, async (req, res) => {
-    const { employeeId } = req.params;
+  app.get('/sessions', requireLogin, async (req, res) => {
+    const employeeId = String(req.query.employeeId || '').trim();
     try {
-      const sessions = await storage.listSessions(employeeId);
+      const sessions = await storage.listAllSessions(employeeId || undefined);
       res.render('sessions', {
         user: req.user,
         employeeId,
-        sessions: sessions.map((s) => ({
-          ...s,
-          startTimeFmt: fmtTime(s.startTime),
-          endTimeFmt: fmtTime(s.endTime),
-          totalBytesFmt: fmtBytes(s.totalBytes),
-        })),
+        sessions: sessions.map((s) => ({ ...s, startTimeFmt: fmtTime(s.startTime), endTimeFmt: fmtTime(s.endTime), totalBytesFmt: fmtBytes(s.totalBytes) })),
       });
-    } catch (err) {
-      res.status(500).render('error', { error: err.message });
-    }
+    } catch (err) { res.status(500).render('error', { error: err.message }); }
+  });
+
+  app.get('/employees/:employeeId/sessions', requireLogin, (req, res) => {
+    res.redirect(`/sessions?employeeId=${encodeURIComponent(req.params.employeeId)}`);
   });
 
   app.get('/employees/:employeeId/sessions/:sessionId/segments', requireLogin, async (req, res) => {

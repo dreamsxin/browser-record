@@ -1,66 +1,11 @@
-<!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>会话列表 — 操作监控后台</title>
-  <link rel="stylesheet" href="/app.css" />
-</head>
-<body>
-  <nav class="navbar">
-    <div class="brand"><a href="/employees">操作监控后台</a></div>
-    <div class="actions">
-      <span class="muted"><%= user.username %></span>
-      <form method="POST" action="/logout" style="display:inline;margin-left:12px;">
-        <button type="submit" class="btn btn-ghost">退出</button>
-      </form>
-    </div>
-  </nav>
-  <div class="container">
-    <div class="breadcrumb">
-      <a href="/employees">员工</a> / <span><%= employeeId %></span> / 会话
-    </div>
-    <div class="card">
-      <div class="card-header">录制会话（<%= employeeId %>）</div>
-      <% if (sessions.length === 0) { %>
-        <div class="empty">该员工暂无录制会话</div>
-      <% } else { %>
-      <table>
-        <thead>
-          <tr>
-            <th>会话 ID</th>
-            <th>模式</th>
-            <th>状态</th>
-            <th>分段数</th>
-            <th>总大小</th>
-            <th>开始时间</th>
-            <th>结束时间</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody>
-          <% sessions.forEach((s) => { %>
-          <tr>
-            <td><%= s.sessionId %></td>
-            <td><%= s.recordingMode === 'video' ? 'Video' : 'Trace' %></td>
-            <td><%= s.status === 'recording' ? '录制中' : '已结束' %></td>
-            <td><%= s.segmentCount %></td>
-            <td><%= s.totalBytesFmt %></td>
-            <td><%= s.startTimeFmt %></td>
-            <td><%= s.status === 'recording' ? '录制中' : s.endTimeFmt %></td>
-            <td>
-              <% if (s.recordingMode === 'video') { %>
-                <a class="link" href="/video/<%= encodeURIComponent(employeeId) %>/<%= encodeURIComponent(s.sessionId) %>">视频回放</a>
-              <% } else if (s.segmentCount > 0) { %>
-                <a class="link" href="/employees/<%= encodeURIComponent(employeeId) %>/sessions/<%= encodeURIComponent(s.sessionId) %>/segments">Trace 回放</a>
-              <% } else { %>—<% } %>
-            </td>
-          </tr>
-          <% }) %>
-        </tbody>
-      </table>
-      <% } %>
-    </div>
-  </div>
-</body>
-</html>
+<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>录制会话 — 操作监控后台</title><link rel="stylesheet" href="/app.css"></head><body>
+<nav class="navbar"><div class="brand"><a href="/sessions">操作监控后台</a></div><div class="actions"><span class="muted"><%= user.username %></span><form method="POST" action="/logout" style="display:inline;margin-left:12px"><button class="btn btn-ghost">退出</button></form></div></nav>
+<div class="container"><div class="filter-bar"><form method="GET" action="/sessions"><input name="employeeId" value="<%= employeeId %>" placeholder="员工 ID"><button class="btn btn-primary">筛选</button><a class="btn btn-ghost" href="/sessions">清除</a></form></div>
+<div class="card"><div class="card-header">录制会话</div><div class="table-wrap">
+<% if (!sessions.length) { %><div class="empty"><%= employeeId ? '该员工暂无录制会话' : '暂无录制会话' %></div><% } else { %>
+<table><thead><tr><th>员工 ID</th><th>会话 ID</th><th>模式</th><th>状态</th><th>分段数</th><th>总大小</th><th>开始时间</th><th>结束时间</th><th>回放</th></tr></thead><tbody>
+<% sessions.forEach((s)=>{ %><tr><td><a class="link" href="/sessions?employeeId=<%= encodeURIComponent(s.employeeId) %>"><%= s.employeeId %></a></td><td><%= s.sessionId %></td><td><%= s.recordingMode==='video'?'Video':'Trace' %></td><td><%= s.status==='recording'?'录制中':'已结束' %></td><td><%= s.segmentCount %></td><td><%= s.totalBytesFmt %></td><td><%= s.startTimeFmt %></td><td><%= s.status==='recording'?'录制中':s.endTimeFmt %></td><td>
+<% if (s.recordingMode==='video' && s.videoArchiveBytes>0) { %><a class="link" href="/video/<%= encodeURIComponent(s.employeeId) %>/<%= encodeURIComponent(s.sessionId) %>">视频回放</a>
+<% } else if (s.recordingMode!=='video' && s.segmentCount>0) { %><a class="link" href="/employees/<%= encodeURIComponent(s.employeeId) %>/sessions/<%= encodeURIComponent(s.sessionId) %>/segments">Trace 回放</a>
+<% } else if (s.status==='recording') { %><span class="muted">录制中</span><% } else { %><span class="muted">无可用文件</span><% } %></td></tr><% }) %>
+</tbody></table><% } %></div></div></div></body></html>

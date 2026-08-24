@@ -8,7 +8,7 @@
 </head>
 <body>
   <nav class="navbar">
-    <div class="brand"><a href="/employees">操作监控后台</a></div>
+    <div class="brand"><a href="/sessions">操作监控后台</a></div>
     <div class="actions">
       <span class="muted"><%= user.username %></span>
       <form method="POST" action="/logout" style="display:inline;margin-left:12px;">
@@ -18,7 +18,7 @@
   </nav>
   <div class="container">
     <div class="breadcrumb">
-      <a href="/employees">员工</a> /
+      <a href="/sessions">录制会话</a> /
       <a href="/employees/<%= encodeURIComponent(employeeId) %>/sessions"><%= employeeId %></a> /
       <span><%= sessionId %></span> / 分段
     </div>
