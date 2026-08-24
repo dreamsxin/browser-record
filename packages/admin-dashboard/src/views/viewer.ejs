@@ -6,20 +6,20 @@
   <title>回放 — 操作监控后台</title>
   <link rel="stylesheet" href="/app.css" />
 </head>
-<body>
+<body class="viewer-page">
   <nav class="navbar">
     <div class="brand"><a href="/sessions">操作监控后台</a></div>
     <div class="actions">
       <a class="btn btn-ghost" href="/employees/<%= encodeURIComponent(employeeId) %>/sessions/<%= encodeURIComponent(sessionId) %>/segments">← 返回分段列表</a>
-      <span class="muted" style="margin-left:12px;"><%= user.username %></span>
+      <span class="muted"><%= user.username %></span>
     </div>
   </nav>
-  <div class="breadcrumb" style="padding:12px 24px 0;max-width:1100px;margin:0 auto;">
+  <div class="viewer-toolbar"><div class="breadcrumb">
     <a href="/sessions">录制会话</a> /
     <a href="/employees/<%= encodeURIComponent(employeeId) %>/sessions"><%= employeeId %></a> /
     <a href="/employees/<%= encodeURIComponent(employeeId) %>/sessions/<%= encodeURIComponent(sessionId) %>/segments"><%= sessionId %></a> /
     分段 #<%= segmentId %>
-  </div>
+  </div></div>
   <iframe class="viewer-frame" src="<%= viewerUrl %>"></iframe>
 </body>
 </html>

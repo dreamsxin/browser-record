@@ -14,10 +14,10 @@
   <div class="container">
     <div class="card">
       <div class="card-header">启动新实例</div>
-      <div style="padding:16px 20px;">
+      <div class="start-panel">
         <div class="toolbar">
           <input type="text" id="employeeId" placeholder="员工 ID（留空自动生成）" />
-          <input type="text" id="startingUrl" placeholder="起始页（留空 about:blank）" style="width:280px;" />
+          <input type="text" id="startingUrl" placeholder="起始页（留空 about:blank）" />
           <select id="recordingMode"><option value="trace">Trace</option><option value="video">Video</option></select>
           <button class="btn btn-primary" onclick="startInstance()">启动实例</button>
         </div>
@@ -59,7 +59,7 @@ async function refresh() {
     const list = await api('GET', '/api/instances');
     if (!list.length) { body.innerHTML = '<div class="empty">暂无实例，请在上方启动</div>'; return; }
     body.innerHTML = `
-      <table>
+      <div class="table-wrap"><table>
         <thead><tr>
           <th>实例 / 员工 ID</th><th>模式</th><th>状态</th><th>录制</th>
           <th>当前分段</th><th>累计分段</th><th>启动时间</th><th>操作</th>
@@ -82,7 +82,7 @@ async function refresh() {
           </tr>`;
         }).join('')}
         </tbody>
-      </table>`;
+      </table></div>`;
   } catch (e) {
     body.innerHTML = `<div class="empty">加载失败：${e.message}</div>`;
   }

@@ -51,8 +51,10 @@ export const SnapshotTabsView: React.FunctionComponent<{
   setIsInspecting: (isInspecting: boolean) => void,
   highlightedElement: HighlightedElement,
   setHighlightedElement: (element: HighlightedElement) => void,
-  playback: PlaybackState
-}> = ({ action, model, sdkLanguage, testIdAttributeName, isInspecting, setIsInspecting, highlightedElement, setHighlightedElement, playback }) => {
+  playback: PlaybackState,
+  selectedPageId?: string,
+  onPageSelected?: (pageId: string) => void
+}> = ({ action, model, sdkLanguage, testIdAttributeName, isInspecting, setIsInspecting, highlightedElement, setHighlightedElement, playback, selectedPageId, onPageSelected }) => {
   const [snapshotTab, setSnapshotTab] = React.useState<'action'|'before'|'after'>('action');
 
   const [shouldPopulateCanvasFromScreenshot] = useSetting('shouldPopulateCanvasFromScreenshot', false);
@@ -67,10 +69,13 @@ export const SnapshotTabsView: React.FunctionComponent<{
 
   const snapshotUrls = React.useMemo((): SnapshotUrls | undefined => snapshotInfoUrl !== undefined ? { snapshotInfoUrl, snapshotUrl, popoutUrl } : undefined, [snapshotInfoUrl, snapshotUrl, popoutUrl]);
 
+  const framePages = React.useMemo(() => model?.pages.filter(p => p.screencastFrames.length) || [], [model]);
+  const effectivePageId = action?.pageId || selectedPageId || framePages[0]?.pageId;
+  const showPageSelector = !!model && model.actions.length === 0 && framePages.length > 1;
   const screencastUrl = React.useMemo(() => {
     if (snapshotUrls || !model)
       return undefined;
-    const page = model.pages.find(p => p.pageId === action?.pageId && p.screencastFrames.length) || model.pages.find(p => p.screencastFrames.length);
+    const page = framePages.find(p => p.pageId === effectivePageId) || framePages[0];
     if (!page)
       return undefined;
     let frame = page.screencastFrames[0];
@@ -80,7 +85,7 @@ export const SnapshotTabsView: React.FunctionComponent<{
       frame = candidate;
     }
     return model.createRelativeUrl('sha1/' + frame.sha1);
-  }, [snapshotUrls, model, action?.pageId, playback.currentTime]);
+  }, [snapshotUrls, model, framePages, effectivePageId, playback.currentTime]);
 
   return <div className='snapshot-tab vbox'>
     <Toolbar>
@@ -97,6 +102,9 @@ export const SnapshotTabsView: React.FunctionComponent<{
         })}
       </div>
       <div style={{ flex: 'auto' }}></div>
+      {showPageSelector && <select aria-label='Browser tab' value={effectivePageId || ''} onChange={e => onPageSelected?.(e.target.value)}>
+        {framePages.map((page, index) => <option key={page.pageId} value={page.pageId}>{model?.pagerefToTitle.get(page.pageId) || `page#${index + 1}`}</option>)}
+      </select>}
       <PlaybackButtons playback={playback} />
       <ToolbarButton icon='link-external' title='Open snapshot in a new tab' disabled={!snapshotUrls?.popoutUrl} onClick={() => {
         const win = window.open(snapshotUrls?.popoutUrl || '', '_blank');

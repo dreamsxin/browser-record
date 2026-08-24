@@ -1,8 +1,7 @@
 <!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>视频回放 — Browser Record</title><link rel="stylesheet" href="/app.css"></head><body>
-<nav class="navbar"><div class="brand"><a href="/sessions">操作监控后台</a></div><span class="muted"><%= user.username %></span></nav>
+<nav class="navbar"><div class="brand"><a href="/sessions">操作监控后台</a></div><div class="actions"><a class="btn btn-ghost" href="/sessions?employeeId=<%= encodeURIComponent(employeeId) %>">返回会话</a><span class="muted"><%= user.username %></span></div></nav>
 <div class="container"><div class="breadcrumb"><a href="/sessions">录制会话</a> / <a href="/sessions?employeeId=<%= encodeURIComponent(employeeId) %>"><%= employeeId %></a> / <%= sessionId %> / 视频回放</div>
-<div class="card"><div class="card-header">视频回放</div><div style="padding:20px">
-<p class="muted">状态：<%= manifest.status %>　开始：<%= new Date(manifest.startedAt).toLocaleString('zh-CN',{hour12:false}) %>　结束：<%= new Date(manifest.endedAt).toLocaleString('zh-CN',{hour12:false}) %></p>
+<section class="card"><div class="card-header">视频回放</div><div class="media-content"><p class="muted">状态：<%= manifest.status %>　开始：<%= new Date(manifest.startedAt).toLocaleString('zh-CN',{hour12:false}) %>　结束：<%= new Date(manifest.endedAt).toLocaleString('zh-CN',{hour12:false}) %></p>
 <% if (!manifest.videos.length) { %><div class="empty">没有可播放的视频</div><% } %>
-<% manifest.videos.forEach((v) => { %><div style="margin-bottom:24px"><h3><%= v.pageId %></h3><video controls preload="metadata" style="width:100%;max-height:70vh;background:#111" src="/video/<%= encodeURIComponent(employeeId) %>/<%= encodeURIComponent(sessionId) %>/<%= encodeURIComponent(v.pageId) %>/stream"></video></div><% }) %>
-</div></div></div></body></html>
+<% manifest.videos.forEach((v) => { %><div class="media-item"><h3><%= v.pageId %></h3><video class="media-player" controls preload="metadata" src="/video/<%= encodeURIComponent(employeeId) %>/<%= encodeURIComponent(sessionId) %>/<%= encodeURIComponent(v.pageId) %>/stream"></video></div><% }) %>
+</div></section></div></body></html>

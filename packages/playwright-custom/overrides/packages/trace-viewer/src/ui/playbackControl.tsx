@@ -37,6 +37,7 @@ export type PlaybackState = {
   onScrubberMouseDown: (e: React.MouseEvent) => void;
   scrubberRef: React.RefObject<HTMLDivElement | null>;
   actionsLength: number;
+  playable: boolean;
   canPrev: boolean;
   canNext: boolean;
   canStop: boolean;
@@ -49,6 +50,7 @@ export function usePlayback(
   onActionSelected: (action: ActionTraceEventInContext) => void,
   timeWindow: Boundaries | undefined,
   boundaries: Boundaries,
+  hasScreencastFrames: boolean,
 ): PlaybackState {
   const [playing, setPlaying] = React.useState(false);
   const [speedIndex, setSpeedIndex] = React.useState(1);
@@ -107,12 +109,14 @@ export function usePlayback(
     return Math.max(firstWindowIndex, Math.min(lastWindowIndex, lo));
   }, [actions, firstWindowIndex, lastWindowIndex]);
 
-  const selectedTime = selectedAction ? selectedAction.startTime : fullMin;
+  const selectedTime = selectedAction ? selectedAction.startTime : (cursorTime ?? fullMin);
+  const frameOnly = !actions.length && hasScreencastFrames;
+  const playable = !!actions.length || frameOnly;
 
   let percent: number;
   if (dragging && dragFraction !== undefined)
     percent = dragFraction * 100;
-  else if (playing && cursorTime !== undefined)
+  else if (cursorTime !== undefined)
     percent = Math.max(0, Math.min(100, ((cursorTime - fullMin) / fullDuration) * 100));
   else
     percent = Math.max(0, Math.min(100, ((selectedTime - fullMin) / fullDuration) * 100));
@@ -144,10 +148,12 @@ export function usePlayback(
       lastFrameTime = now;
       setCursorTime(traceTime);
 
-      const idx = actionIndexAtTime(traceTime);
-      if (idx !== lastSelectedIndex) {
-        lastSelectedIndex = idx;
-        onActionSelectedRef.current(actionsRef.current[idx]);
+      if (actions.length) {
+        const idx = actionIndexAtTime(traceTime);
+        if (idx !== lastSelectedIndex) {
+          lastSelectedIndex = idx;
+          onActionSelectedRef.current(actionsRef.current[idx]);
+        }
       }
 
       if (traceTime >= windowMaxRef.current) {
@@ -162,25 +168,30 @@ export function usePlayback(
   }, [playing, speed]);
 
   React.useEffect(() => {
-    if (!playing)
+    if (!playing && !frameOnly)
       setCursorTime(undefined);
-  }, [playing]);
+  }, [playing, frameOnly]);
 
   const togglePlay = React.useCallback(() => {
-    if (!actions.length)
+    if (!playable)
       return;
-    // Always restart from the window start when at the end (or beyond the window).
-    const atEnd = currentIndex >= lastWindowIndex;
-    if (!playing && atEnd)
-      onActionSelected(actions[firstWindowIndex]);
+    if (frameOnly && !playing && (cursorTime === undefined || cursorTime >= windowMax))
+      setCursorTime(windowMin);
+    if (!frameOnly) {
+      const atEnd = currentIndex >= lastWindowIndex;
+      if (!playing && atEnd)
+        onActionSelected(actions[firstWindowIndex]);
+    }
     setPlaying(!playing);
-  }, [playing, actions, currentIndex, onActionSelected, firstWindowIndex, lastWindowIndex]);
+  }, [playable, frameOnly, playing, cursorTime, windowMin, windowMax, currentIndex, lastWindowIndex, onActionSelected, actions, firstWindowIndex]);
 
   const stop = React.useCallback(() => {
     setPlaying(false);
-    if (actions.length)
+    if (frameOnly)
+      setCursorTime(windowMin);
+    else if (actions.length)
       onActionSelected(actions[firstWindowIndex]);
-  }, [actions, onActionSelected, firstWindowIndex]);
+  }, [frameOnly, windowMin, actions, onActionSelected, firstWindowIndex]);
 
   const prev = React.useCallback(() => {
     const target = Math.max(currentIndex - 1, firstWindowIndex);
@@ -207,13 +218,17 @@ export function usePlayback(
     return Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
   }, []);
 
-  const selectActionAtFraction = React.useCallback((fraction: number) => {
+  const selectAtFraction = React.useCallback((fraction: number) => {
+    const t = fullMin + fraction * fullDuration;
+    if (frameOnly) {
+      setCursorTime(t);
+      return;
+    }
     if (!actions.length)
       return;
-    const t = fullMin + fraction * fullDuration;
     const idx = actionIndexAtTime(t);
     onActionSelectedRef.current(actionsRef.current[idx]);
-  }, [actions, fullMin, fullDuration, actionIndexAtTime]);
+  }, [frameOnly, actions.length, fullMin, fullDuration, actionIndexAtTime]);
 
   const dragCleanupRef = React.useRef<(() => void) | null>(null);
 
@@ -222,7 +237,7 @@ export function usePlayback(
   }, []);
 
   const onScrubberMouseDown = React.useCallback((e: React.MouseEvent) => {
-    if (!actions.length || e.button !== 0)
+    if (!playable || e.button !== 0)
       return;
     e.preventDefault();
     e.stopPropagation();
@@ -231,19 +246,19 @@ export function usePlayback(
     setPlaying(false);
     const fraction = fractionFromMouseEvent(e);
     setDragFraction(fraction);
-    selectActionAtFraction(fraction);
+    selectAtFraction(fraction);
 
     const onMouseMove = (me: MouseEvent) => {
       const f = fractionFromMouseEvent(me);
       setDragFraction(f);
-      selectActionAtFraction(f);
+      selectAtFraction(f);
     };
     const onMouseUp = (me: MouseEvent) => {
       document.removeEventListener('mousemove', onMouseMove);
       document.removeEventListener('mouseup', onMouseUp);
       dragCleanupRef.current = null;
       const f = fractionFromMouseEvent(me);
-      selectActionAtFraction(f);
+      selectAtFraction(f);
       setDragFraction(undefined);
       setDragging(false);
     };
@@ -253,21 +268,21 @@ export function usePlayback(
       document.removeEventListener('mousemove', onMouseMove);
       document.removeEventListener('mouseup', onMouseUp);
     };
-  }, [actions, selectActionAtFraction, fractionFromMouseEvent]);
+  }, [playable, selectAtFraction, fractionFromMouseEvent]);
 
   const animating = !playing && !dragging;
   const ticks = actions.length > 0 && actions.length <= 200 ? actions.map(a => ((a.startTime - fullMin) / fullDuration) * 100) : undefined;
 
   const canPrev = currentIndex > firstWindowIndex;
   const canNext = currentIndex < lastWindowIndex;
-  const canStop = playing || currentIndex > firstWindowIndex;
+  const canStop = frameOnly ? playing || (cursorTime ?? windowMin) > windowMin : playing || currentIndex > firstWindowIndex;
 
-  const currentTime = dragging && dragFraction !== undefined ? fullMin + dragFraction * fullDuration : (playing && cursorTime !== undefined ? cursorTime : selectedTime);
+  const currentTime = dragging && dragFraction !== undefined ? fullMin + dragFraction * fullDuration : (cursorTime ?? selectedTime);
 
   return {
     playing, speed, currentIndex, percent, currentTime, animating,
     togglePlay, stop, prev, next, cycleSpeed,
-    onScrubberMouseDown, scrubberRef, actionsLength: actions.length,
+    onScrubberMouseDown, scrubberRef, actionsLength: actions.length, playable,
     canPrev, canNext, canStop, ticks,
   };
 }
@@ -277,7 +292,7 @@ export const PlaybackButtons: React.FC<{
 }> = ({ playback }) => {
   return <>
     <ToolbarButton icon='chevron-left' title='Previous action' onClick={playback.prev} disabled={!playback.canPrev} />
-    <ToolbarButton icon={playback.playing ? 'debug-pause' : 'play'} disabled={!playback.actionsLength} title={playback.playing ? 'Pause' : 'Play'} onClick={playback.togglePlay} />
+    <ToolbarButton icon={playback.playing ? 'debug-pause' : 'play'} disabled={!playback.playable} title={playback.playing ? 'Pause' : 'Play'} onClick={playback.togglePlay} />
     <ToolbarButton icon='debug-stop' title='Stop' onClick={playback.stop} disabled={!playback.canStop} />
     <ToolbarButton icon='chevron-right' title='Next action' onClick={playback.next} disabled={!playback.canNext} />
     <button className='playback-speed' onClick={playback.cycleSpeed} title='Playback speed'>
